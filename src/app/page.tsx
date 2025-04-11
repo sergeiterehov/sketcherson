@@ -1,95 +1,68 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { useEffect, useState } from "react";
+import { TSketch, EShape, TShape } from "./types";
+import { sampleSketch } from "./sampleSketch";
+import { solveConstraints } from "./solver";
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [viewSize, setViewSize] = useState(() => ({ width: 600, height: 600 }));
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  useEffect(
+    () =>
+      setViewSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      }),
+    []
+  );
+
+  const [sketch, setSketch] = useState<TSketch>(() => JSON.parse(JSON.stringify(sampleSketch)));
+
+  const handleClick = () => {
+    const next = { ...sketch };
+
+    for (let i = 0; i < 1000; i += 1) solveConstraints(next);
+    setSketch(next);
+  };
+
+  useEffect(() => {
+    const timeout = setInterval(handleClick, 10);
+
+    return () => clearInterval(timeout);
+  }, []);
+
+  const shapeMap = new Map<number, TShape>();
+
+  for (const shape of sketch.shapes) {
+    shapeMap.set(shape.id, shape);
+  }
+
+  const { width, height } = viewSize;
+
+  return (
+    <div onClick={handleClick}>
+      <div>Tools</div>
+      <div>
+        <svg width={width} height={height}>
+          <g transform={`translate(${width / 2},${height / 2})`}>
+            <line x1={-50} y1={0} x2={50} y2={0} strokeWidth="1" stroke="#F008" />
+            <line x1={0} y1={-50} x2={0} y2={50} strokeWidth="1" stroke="#0F08" />
+            {sketch.shapes.map((s) => {
+              if (s.shape === EShape.Point) {
+                return <circle key={s.id} cx={s.x} cy={s.y} r={2} fill="blue" />;
+              } else if (s.shape === EShape.Segment) {
+                const a = shapeMap.get(s.a_id);
+                const b = shapeMap.get(s.b_id);
+
+                if (!a || !b) throw "E_REF";
+                if (a.shape !== EShape.Point || b.shape !== EShape.Point) throw "E_SHAPE_TYPE";
+
+                return <line key={s.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeWidth="1" stroke="black" />;
+              }
+            })}
+          </g>
+        </svg>
+      </div>
     </div>
   );
 }

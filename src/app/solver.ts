@@ -6,21 +6,55 @@ import {
   TConstraintPerpendicular,
   TConstraintCoincident,
   TConstraintFix,
+  TConstraintRadius,
   EConstraint,
 } from "./types";
 
-export function solveConstraints(sketch: TSketch) {
-  const damping = 0.1;
+export class SketchSolver {
+  private shapesMap = new Map<number, TShape>();
 
-  const shapeMap = new Map<number, TShape>();
-
-  for (const shape of sketch.shapes) {
-    shapeMap.set(shape.id, shape);
+  constructor(public readonly sketch: TSketch, public damping = 0.1) {
+    this.updateShapes();
   }
 
-  const solveDistance = (constraint: TConstraintDistance) => {
-    const a = shapeMap.get(constraint.a_id);
-    const b = shapeMap.get(constraint.b_id);
+  public updateShapes() {
+    const map = this.shapesMap;
+
+    map.clear();
+
+    for (const shape of this.sketch.shapes) {
+      map.set(shape.id, shape);
+    }
+  }
+
+  solveStep() {
+    for (const constraint of this.sketch.constraints) {
+      switch (constraint.constraint) {
+        case EConstraint.Distance:
+          this._solveDistance(constraint);
+          break;
+        case EConstraint.Perpendicular:
+          this._solvePerpendicular(constraint);
+          break;
+        case EConstraint.Coincident:
+          this._solveCoincident(constraint);
+          break;
+        case EConstraint.Fix:
+          this._solveFix(constraint);
+          break;
+        case EConstraint.Radius:
+          this._solveRadius(constraint);
+          break;
+      }
+    }
+  }
+
+  private _solveDistance(constraint: TConstraintDistance) {
+    const map = this.shapesMap;
+    const damping = this.damping;
+
+    const a = map.get(constraint.a_id);
+    const b = map.get(constraint.b_id);
 
     if (!a || !b) throw "E_REF";
 
@@ -29,11 +63,8 @@ export function solveConstraints(sketch: TSketch) {
       const dy = b.y - a.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      // TODO: if dist === 0
-      if (dist === 0) return;
-
-      const err = dist - constraint.distance;
-      const ratio = err / dist;
+      const err = dist - constraint.d;
+      const ratio = err / (dist || 1);
 
       if (Math.abs(err) < 1e-6) return;
 
@@ -47,41 +78,37 @@ export function solveConstraints(sketch: TSketch) {
     } else {
       throw "E_SHAPE_TYPE";
     }
-  };
+  }
 
-  const solvePerpendicular = (constraint: TConstraintPerpendicular) => {
-    const a = shapeMap.get(constraint.a_id);
-    const b = shapeMap.get(constraint.b_id);
+  private _solvePerpendicular = (constraint: TConstraintPerpendicular) => {
+    const map = this.shapesMap;
+    const damping = this.damping;
+
+    const a = map.get(constraint.a_id);
+    const b = map.get(constraint.b_id);
 
     if (!a || !b) throw "E_REF";
     if (a.shape !== EShape.Segment || b.shape !== EShape.Segment) throw "E_SHAPE_TYPE";
 
-    const A = shapeMap.get(a.a_id);
-    const B = shapeMap.get(a.b_id);
-    const C = shapeMap.get(b.a_id);
-    const D = shapeMap.get(b.b_id);
+    const A = map.get(a.a_id);
+    const B = map.get(a.b_id);
+    const C = map.get(b.a_id);
+    const D = map.get(b.b_id);
 
     if (!A || !B || !C || !D) throw "E_REF";
     if (A.shape !== EShape.Point || B.shape !== EShape.Point || C.shape !== EShape.Point || D.shape !== EShape.Point)
       throw "E_SHAPE_TYPE";
 
-    // Направляющие векторы
     const dx1 = B.x - A.x;
     const dy1 = B.y - A.y;
     const dx2 = D.x - C.x;
     const dy2 = D.y - C.y;
 
-    // Скалярное произведение (ошибка перпендикулярности)
     const err = dx1 * dx2 + dy1 * dy2;
 
-    // Если уже перпендикулярны (error ≈ 0), ничего не делаем
     if (Math.abs(err) < 1e-6) return;
 
-    // Корректируем точки линий, чтобы минимизировать error
-    // (используем градиентный спуск)
     const force = err * damping * 0.001;
-
-    // Корректируем все 4 точки (симметрично)
 
     A.x += dx1 * force * 0.25;
     A.y += dy1 * force * 0.25;
@@ -96,9 +123,11 @@ export function solveConstraints(sketch: TSketch) {
     D.y -= dy2 * force * 0.25;
   };
 
-  const solveCoincident = (constraint: TConstraintCoincident) => {
-    const a = shapeMap.get(constraint.a_id);
-    const b = shapeMap.get(constraint.b_id);
+  private _solveCoincident(constraint: TConstraintCoincident) {
+    const map = this.shapesMap;
+
+    const a = map.get(constraint.a_id);
+    const b = map.get(constraint.b_id);
 
     if (!a || !b) throw "E_REF";
 
@@ -115,10 +144,12 @@ export function solveConstraints(sketch: TSketch) {
     a.y = ty;
     b.x = tx;
     b.y = ty;
-  };
+  }
 
-  const solveFix = (constraint: TConstraintFix) => {
-    const p = shapeMap.get(constraint.p_id);
+  private _solveFix(constraint: TConstraintFix) {
+    const map = this.shapesMap;
+
+    const p = map.get(constraint.p_id);
 
     if (!p) throw "E_REF";
 
@@ -126,17 +157,24 @@ export function solveConstraints(sketch: TSketch) {
 
     p.x = constraint.x;
     p.y = constraint.y;
-  };
+  }
 
-  for (const constraint of sketch.constraints) {
-    if (constraint.constraint === EConstraint.Distance) {
-      solveDistance(constraint);
-    } else if (constraint.constraint === EConstraint.Perpendicular) {
-      solvePerpendicular(constraint);
-    } else if (constraint.constraint === EConstraint.Coincident) {
-      solveCoincident(constraint);
-    } else if (constraint.constraint === EConstraint.Fix) {
-      solveFix(constraint);
-    }
+  private _solveRadius(constraint: TConstraintRadius) {
+    const map = this.shapesMap;
+
+    const circle = map.get(constraint.c_id);
+
+    if (!circle) throw "E_REF";
+
+    if (circle.shape !== EShape.Circle) throw "E_SHAPE_TYPE";
+
+    const currentRadius = circle.r;
+    const targetRadius = constraint.r;
+
+    const err = currentRadius - targetRadius;
+
+    if (Math.abs(err) < 1e-6) return;
+
+    circle.r -= err * this.damping;
   }
 }

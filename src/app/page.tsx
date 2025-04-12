@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { TSketch, EShape, TShape } from "./types";
 import { sampleSketch } from "./sampleSketch";
-import { solveConstraints } from "./solver";
+import { SketchSolver } from "./solver";
 
 export default function Home() {
   const [viewSize, setViewSize] = useState(() => ({ width: 600, height: 600 }));
@@ -21,7 +21,9 @@ export default function Home() {
   const handleClick = () => {
     const next = { ...sketch };
 
-    for (let i = 0; i < 1000; i += 1) solveConstraints(next);
+    const solver = new SketchSolver(next);
+
+    for (let i = 0; i < 1000; i += 1) solver.solveStep();
     setSketch(next);
   };
 
@@ -58,6 +60,13 @@ export default function Home() {
                 if (a.shape !== EShape.Point || b.shape !== EShape.Point) throw "E_SHAPE_TYPE";
 
                 return <line key={s.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeWidth="1" stroke="black" />;
+              } else if (s.shape === EShape.Circle) {
+                const c = shapeMap.get(s.c_id);
+
+                if (!c) throw "E_REF";
+                if (c.shape !== EShape.Point) throw "E_SHAPE_TYPE";
+
+                return <circle key={s.id} cx={c.x} cy={c.y} r={s.r} strokeWidth="1" stroke="black" fill="none" />;
               }
             })}
           </g>

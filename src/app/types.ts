@@ -13,6 +13,7 @@ export enum EConstraint {
   Perpendicular = "perpendicular",
   Coincident = "coincident",
   Fix = "fix",
+  Radius = "radius",
 }
 
 export type TSomeShape<E extends EShape, T extends object> = TIdentified<{ shape: E } & T>;
@@ -45,8 +46,8 @@ export type TShapeSegment = TSomeShape<
 export type TShapeCircle = TSomeShape<
   EShape.Circle,
   {
-    center_id: number;
-    radius: number;
+    c_id: number;
+    r: number;
   }
 >;
 
@@ -65,7 +66,7 @@ export type TConstraintDistance = TSomeConstraint<
   {
     a_id: number;
     b_id: number;
-    distance: number;
+    d: number;
   }
 >;
 
@@ -94,12 +95,21 @@ export type TConstraintFix = TSomeConstraint<
   }
 >;
 
+export type TConstraintRadius = TSomeConstraint<
+  EConstraint.Radius,
+  {
+    c_id: number;
+    r: number;
+  }
+>;
+
 export type TConstraint =
   | TConstraintEquals
   | TConstraintDistance
   | TConstraintPerpendicular
   | TConstraintCoincident
-  | TConstraintFix;
+  | TConstraintFix
+  | TConstraintRadius;
 
 export type TSketch = {
   shapes: TShape[];

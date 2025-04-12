@@ -5,6 +5,8 @@ import {
   TConstraintDistance,
   TConstraintFix,
   TConstraintPerpendicular,
+  TConstraintRadius,
+  TShapeCircle,
   TShapePoint,
   TShapeSegment,
   TSketch,
@@ -44,7 +46,7 @@ export const makeDistance = (sketch: TSketch, a: TShapePoint, b: TShapePoint, d:
     constraint: EConstraint.Distance,
     a_id: a.id,
     b_id: b.id,
-    distance: d,
+    d: d,
   };
 
   sketch.constraints.push(c);
@@ -76,6 +78,18 @@ export const makePerpendicular = (sketch: TSketch, a: TShapeSegment, b: TShapeSe
   sketch.constraints.push(c);
 
   return c;
+};
+export const makeRadius = (sketch: TSketch, c: TShapeCircle, r: number): TConstraintRadius => {
+  const con: TConstraintRadius = {
+    id: makeId(),
+    constraint: EConstraint.Radius,
+    c_id: c.id,
+    r,
+  };
+
+  sketch.constraints.push(con);
+
+  return con;
 };
 
 export const makePoint = (sketch: TSketch, x: number, y: number): TShapePoint => {
@@ -126,6 +140,21 @@ export const makeSegment3 = (sketch: TSketch, a: TShapePoint, bx: number, by: nu
   sketch.shapes.push(s);
 
   return [s, b];
+};
+
+export const makeCircle3 = (sketch: TSketch, cx: number, cy: number, r: number): [TShapeCircle, TShapePoint] => {
+  const c = makePoint(sketch, cx, cy);
+
+  const circle: TShapeCircle = {
+    id: makeId(),
+    shape: EShape.Circle,
+    c_id: c.id,
+    r,
+  };
+
+  sketch.shapes.push(circle);
+
+  return [circle, c];
 };
 
 export const makeRect4 = (

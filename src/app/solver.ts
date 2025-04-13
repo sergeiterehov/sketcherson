@@ -25,7 +25,7 @@ export class SketchSolver {
     return geo;
   }
 
-  constructor(public readonly sketch: TSketch, public damping = 0.1) {
+  constructor(public readonly sketch: TSketch, public scale = 0.1) {
     this.update();
   }
 
@@ -48,13 +48,17 @@ export class SketchSolver {
       params.push(...constraintParams);
     }
 
+    const scale = this.scale;
     let err = 0;
 
-    // TODO: limit iterations
     for (let i = 0; i < iterationsLimit; i += 1) {
       for (const param of params) {
         for (const constraint of this.sketch.constraints) {
-          err += this._grad(constraint, param);
+          const grad = this._grad(constraint, param);
+          const diff = grad * scale;
+
+          param[0] += diff;
+          err += diff;
         }
       }
 
@@ -94,29 +98,20 @@ export class SketchSolver {
   }
 
   private _grad(constraint: TConstraint, param: TParam): number {
-    let diff = 0;
-
     switch (constraint.constraint) {
       case EConstraint.Distance:
-        diff = this._gradDistance(constraint, param);
-        break;
+        return this._gradDistance(constraint, param);
       case EConstraint.Perpendicular:
-        diff = this._gradPerpendicular(constraint, param);
-        break;
+        return this._gradPerpendicular(constraint, param);
       case EConstraint.Coincident:
-        diff = this._gradCoincident(constraint, param);
-        break;
+        return this._gradCoincident(constraint, param);
       case EConstraint.Fix:
-        diff = this._gradFix(constraint, param);
-        break;
+        return this._gradFix(constraint, param);
       case EConstraint.Radius:
-        diff = this._gradRadius(constraint, param);
-        break;
+        return this._gradRadius(constraint, param);
+      default:
+        return 0;
     }
-
-    param[0] += diff;
-
-    return diff;
   }
 
   private _gradFix(constraint: TConstraintFix, param: TParam): number {
@@ -129,10 +124,8 @@ export class SketchSolver {
 
     if (Math.abs(err) < 1e-6) return 0;
 
-    const damping = this.damping;
-
-    if (param === p.x) return dx * damping;
-    if (param === p.y) return dy * damping;
+    if (param === p.x) return dx;
+    if (param === p.y) return dy;
 
     return 0;
   }
@@ -141,31 +134,25 @@ export class SketchSolver {
     const a = this._getGeo(constraint.a_id, EGeo.Point);
     const b = this._getGeo(constraint.b_id, EGeo.Point);
 
-    const dx = b.x[0] - a.x[0];
-    const dy = b.y[0] - a.y[0];
-    const dist = Math.sqrt(dx * dx + dy * dy);
+    const dx = a.x[0] - b.x[0];
+    const dy = a.y[0] - b.y[0];
+    const d = Math.sqrt(dx * dx + dy * dy);
 
-    const err = dist - constraint.d;
-    const ratio = err / (dist || 1);
+    const err = d - constraint.d;
 
     if (Math.abs(err) < 1e-6) return 0;
 
-    const damping = this.damping;
+    const ratio = err / (d || 1);
 
-    const cx = dx * ratio * 0.5 * damping;
-    const cy = dy * ratio * 0.5 * damping;
-
-    if (param === a.x) return +cx;
-    if (param === a.y) return +cy;
-    if (param === b.x) return -cx;
-    if (param === b.y) return -cy;
+    if (param === a.x) return -dx * ratio;
+    if (param === a.y) return -dy * ratio;
+    if (param === b.x) return +dx * ratio;
+    if (param === b.y) return +dy * ratio;
 
     return 0;
   }
 
   private _gradPerpendicular(constraint: TConstraintPerpendicular, param: TParam): number {
-    const damping = this.damping;
-
     const a = this._getGeo(constraint.a_id, EGeo.Segment);
     const b = this._getGeo(constraint.b_id, EGeo.Segment);
 
@@ -183,16 +170,16 @@ export class SketchSolver {
 
     if (Math.abs(err) < 1e-6) return 0;
 
-    const force = err * damping * 0.001;
+    const force = err * 0.001;
 
-    if (param === A.x) return +dx1 * force;
-    if (param === A.y) return +dy1 * force;
+    if (param === A.x) return +dx2 * force;
+    if (param === A.y) return +dy2 * force;
     if (param === B.x) return -dx2 * force;
     if (param === B.y) return -dy2 * force;
     if (param === C.x) return +dx1 * force;
     if (param === C.y) return +dy1 * force;
-    if (param === D.x) return -dx2 * force;
-    if (param === D.y) return -dy2 * force;
+    if (param === D.x) return -dx1 * force;
+    if (param === D.y) return -dy1 * force;
 
     return 0;
   }
@@ -206,19 +193,20 @@ export class SketchSolver {
     const bx = b.x[0];
     const by = b.y[0];
 
-    const tx = (ax + bx) / 2;
-    const ty = (ay + by) / 2;
+    const dx = ax - bx;
+    const dy = ay - by;
 
-    const err = Math.abs(bx - ax) + Math.abs(by - ay);
+    const err = Math.sqrt(dx * dx + dy * dy);
 
     if (Math.abs(err) < 1e-6) return 0;
 
-    const damping = this.damping;
+    const tx = (ax + bx) / 2;
+    const ty = (ay + by) / 2;
 
-    if (param === a.x) return (tx - ax) * damping;
-    if (param === a.y) return (ty - ay) * damping;
-    if (param === b.x) return (tx - bx) * damping;
-    if (param === b.y) return (ty - by) * damping;
+    if (param === a.x) return tx - ax;
+    if (param === a.y) return ty - ay;
+    if (param === b.x) return tx - bx;
+    if (param === b.y) return ty - by;
 
     return 0;
   }
@@ -233,7 +221,7 @@ export class SketchSolver {
 
     if (Math.abs(err) < 1e-6) return 0;
 
-    if (param === circle.r) return -err * this.damping;
+    if (param === circle.r) return -err;
 
     return 0;
   }

@@ -10,8 +10,8 @@ rectFixPoint.y[0] = 0;
 
 makeFix(sampleSketch, rectFixPoint);
 
-// Not working with -200, -200
-const circle = makeCircle3(sampleSketch, -100, -100, 10);
+// Not working with -400, -200, reduce solver scale
+const circle = makeCircle3(sampleSketch, -200, -200, 10);
 
 makeRadius(sampleSketch, circle[0], 40);
 

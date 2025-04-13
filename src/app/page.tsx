@@ -42,18 +42,27 @@ export default function Home() {
 
   const { width, height } = viewSize;
 
+  const oxColor = "#F008";
+  const oyColor = "#0F08";
+
+  const curveColor = "#999";
+  const curveWidth = 1;
+
+  const pointColor = "#444";
+  const pointRadius = 2;
+
   return (
     <div onClick={handleClick}>
       <div>Tools</div>
       <div>
         <svg width={width} height={height}>
           <g transform={`translate(${width / 2},${height / 2})`}>
-            <line x1={-50} y1={0} x2={50} y2={0} strokeWidth="1" stroke="#F008" />
-            <line x1={0} y1={-50} x2={0} y2={50} strokeWidth="1" stroke="#0F08" />
+            {/* basis layer */}
+            <line x1={-width} y1={0} x2={width} y2={0} strokeWidth={curveWidth} stroke={oxColor} />
+            <line x1={0} y1={-height} x2={0} y2={height} strokeWidth={curveWidth} stroke={oyColor} />
+            {/* curves layer */}
             {sketch.geos.map((s) => {
-              if (s.geo === EGeo.Point) {
-                return <circle key={s.id} cx={s.x[0]} cy={s.y[0]} r={2} fill="blue" />;
-              } else if (s.geo === EGeo.Segment) {
+              if (s.geo === EGeo.Segment) {
                 const a = geoMap.get(s.a_id);
                 const b = geoMap.get(s.b_id);
 
@@ -61,7 +70,15 @@ export default function Home() {
                 if (a.geo !== EGeo.Point || b.geo !== EGeo.Point) throw "E_SHAPE_TYPE";
 
                 return (
-                  <line key={s.id} x1={a.x[0]} y1={a.y[0]} x2={b.x[0]} y2={b.y[0]} strokeWidth="1" stroke="black" />
+                  <line
+                    key={s.id}
+                    x1={a.x[0]}
+                    y1={a.y[0]}
+                    x2={b.x[0]}
+                    y2={b.y[0]}
+                    strokeWidth={curveWidth}
+                    stroke={curveColor}
+                  />
                 );
               } else if (s.geo === EGeo.Circle) {
                 const c = geoMap.get(s.c_id);
@@ -70,8 +87,22 @@ export default function Home() {
                 if (c.geo !== EGeo.Point) throw "E_SHAPE_TYPE";
 
                 return (
-                  <circle key={s.id} cx={c.x[0]} cy={c.y[0]} r={s.r[0]} strokeWidth="1" stroke="black" fill="none" />
+                  <circle
+                    key={s.id}
+                    cx={c.x[0]}
+                    cy={c.y[0]}
+                    r={s.r[0]}
+                    strokeWidth={curveWidth}
+                    stroke={curveColor}
+                    fill="none"
+                  />
                 );
+              }
+            })}
+            {/* points layer */}
+            {sketch.geos.map((s) => {
+              if (s.geo === EGeo.Point) {
+                return <circle key={s.id} cx={s.x[0]} cy={s.y[0]} r={pointRadius} fill={pointColor} />;
               }
             })}
           </g>

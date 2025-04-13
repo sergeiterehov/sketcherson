@@ -1,6 +1,9 @@
-export type TIdentified<T extends object> = { id: number } & T;
+export type TParam = [number];
+export type TID = number;
 
-export enum EShape {
+export type TIdentified<T extends object> = { id: TID } & T;
+
+export enum EGeo {
   Point = "point",
   Line = "line",
   Segment = "segment",
@@ -16,56 +19,56 @@ export enum EConstraint {
   Radius = "radius",
 }
 
-export type TSomeShape<E extends EShape, T extends object> = TIdentified<{ shape: E } & T>;
+export type TSomeGeo<E extends EGeo, T extends object> = TIdentified<{ geo: E } & T>;
 export type TSomeConstraint<E extends EConstraint, T extends object> = TIdentified<{ constraint: E } & T>;
 
-export type TShapePoint = TSomeShape<
-  EShape.Point,
+export type TGeoPoint = TSomeGeo<
+  EGeo.Point,
   {
-    x: number;
-    y: number;
+    x: TParam;
+    y: TParam;
   }
 >;
 
-export type TShapeLine = TSomeShape<
-  EShape.Line,
+export type TGeoLine = TSomeGeo<
+  EGeo.Line,
   {
-    k: number;
-    b: number;
+    k: TParam;
+    b: TParam;
   }
 >;
 
-export type TShapeSegment = TSomeShape<
-  EShape.Segment,
+export type TGeoSegment = TSomeGeo<
+  EGeo.Segment,
   {
-    a_id: number;
-    b_id: number;
+    a_id: TID;
+    b_id: TID;
   }
 >;
 
-export type TShapeCircle = TSomeShape<
-  EShape.Circle,
+export type TGeoCircle = TSomeGeo<
+  EGeo.Circle,
   {
-    c_id: number;
-    r: number;
+    c_id: TID;
+    r: TParam;
   }
 >;
 
-export type TShape = TShapePoint | TShapeLine | TShapeSegment | TShapeCircle;
+export type TGeo = TGeoPoint | TGeoLine | TGeoSegment | TGeoCircle;
 
 export type TConstraintEquals = TSomeConstraint<
   EConstraint.Equals,
   {
-    a_id: number;
-    b_id: number;
+    a_id: TID;
+    b_id: TID;
   }
 >;
 
 export type TConstraintDistance = TSomeConstraint<
   EConstraint.Distance,
   {
-    a_id: number;
-    b_id: number;
+    a_id: TID;
+    b_id: TID;
     d: number;
   }
 >;
@@ -73,23 +76,23 @@ export type TConstraintDistance = TSomeConstraint<
 export type TConstraintPerpendicular = TSomeConstraint<
   EConstraint.Perpendicular,
   {
-    a_id: number;
-    b_id: number;
+    a_id: TID;
+    b_id: TID;
   }
 >;
 
 export type TConstraintCoincident = TSomeConstraint<
   EConstraint.Coincident,
   {
-    a_id: number;
-    b_id: number;
+    a_id: TID;
+    b_id: TID;
   }
 >;
 
 export type TConstraintFix = TSomeConstraint<
   EConstraint.Fix,
   {
-    p_id: number;
+    p_id: TID;
     x: number;
     y: number;
   }
@@ -98,7 +101,7 @@ export type TConstraintFix = TSomeConstraint<
 export type TConstraintRadius = TSomeConstraint<
   EConstraint.Radius,
   {
-    c_id: number;
+    c_id: TID;
     r: number;
   }
 >;
@@ -112,6 +115,6 @@ export type TConstraint =
   | TConstraintRadius;
 
 export type TSketch = {
-  shapes: TShape[];
+  geos: TGeo[];
   constraints: TConstraint[];
 };

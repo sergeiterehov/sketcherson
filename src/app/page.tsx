@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { TSketch, EShape, TShape } from "./types";
+import { TSketch, EGeo, TGeo } from "./types";
 import { sampleSketch } from "./sampleSketch";
 import { SketchSolver } from "./solver";
 
@@ -23,7 +23,8 @@ export default function Home() {
 
     const solver = new SketchSolver(next);
 
-    for (let i = 0; i < 1000; i += 1) solver.solveStep();
+    for (let i = 0; i < 1; i += 1) solver.solve();
+
     setSketch(next);
   };
 
@@ -33,10 +34,10 @@ export default function Home() {
     return () => clearInterval(timeout);
   }, []);
 
-  const shapeMap = new Map<number, TShape>();
+  const geoMap = new Map<number, TGeo>();
 
-  for (const shape of sketch.shapes) {
-    shapeMap.set(shape.id, shape);
+  for (const geos of sketch.geos) {
+    geoMap.set(geos.id, geos);
   }
 
   const { width, height } = viewSize;
@@ -49,24 +50,28 @@ export default function Home() {
           <g transform={`translate(${width / 2},${height / 2})`}>
             <line x1={-50} y1={0} x2={50} y2={0} strokeWidth="1" stroke="#F008" />
             <line x1={0} y1={-50} x2={0} y2={50} strokeWidth="1" stroke="#0F08" />
-            {sketch.shapes.map((s) => {
-              if (s.shape === EShape.Point) {
-                return <circle key={s.id} cx={s.x} cy={s.y} r={2} fill="blue" />;
-              } else if (s.shape === EShape.Segment) {
-                const a = shapeMap.get(s.a_id);
-                const b = shapeMap.get(s.b_id);
+            {sketch.geos.map((s) => {
+              if (s.geo === EGeo.Point) {
+                return <circle key={s.id} cx={s.x[0]} cy={s.y[0]} r={2} fill="blue" />;
+              } else if (s.geo === EGeo.Segment) {
+                const a = geoMap.get(s.a_id);
+                const b = geoMap.get(s.b_id);
 
                 if (!a || !b) throw "E_REF";
-                if (a.shape !== EShape.Point || b.shape !== EShape.Point) throw "E_SHAPE_TYPE";
+                if (a.geo !== EGeo.Point || b.geo !== EGeo.Point) throw "E_SHAPE_TYPE";
 
-                return <line key={s.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeWidth="1" stroke="black" />;
-              } else if (s.shape === EShape.Circle) {
-                const c = shapeMap.get(s.c_id);
+                return (
+                  <line key={s.id} x1={a.x[0]} y1={a.y[0]} x2={b.x[0]} y2={b.y[0]} strokeWidth="1" stroke="black" />
+                );
+              } else if (s.geo === EGeo.Circle) {
+                const c = geoMap.get(s.c_id);
 
                 if (!c) throw "E_REF";
-                if (c.shape !== EShape.Point) throw "E_SHAPE_TYPE";
+                if (c.geo !== EGeo.Point) throw "E_SHAPE_TYPE";
 
-                return <circle key={s.id} cx={c.x} cy={c.y} r={s.r} strokeWidth="1" stroke="black" fill="none" />;
+                return (
+                  <circle key={s.id} cx={c.x[0]} cy={c.y[0]} r={s.r[0]} strokeWidth="1" stroke="black" fill="none" />
+                );
               }
             })}
           </g>

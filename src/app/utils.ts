@@ -1,22 +1,23 @@
 import {
   EConstraint,
-  EShape,
+  EGeo,
   TConstraintCoincident,
   TConstraintDistance,
   TConstraintFix,
   TConstraintPerpendicular,
   TConstraintRadius,
-  TShapeCircle,
-  TShapePoint,
-  TShapeSegment,
+  TGeoCircle,
+  TGeoPoint,
+  TGeoSegment,
+  TParam,
   TSketch,
 } from "./types";
 
 let id = 1;
 
-export const getPoint = (sketch: TSketch, id: number): TShapePoint => {
-  for (const s of sketch.shapes) {
-    if (s.id === id && s.shape === EShape.Point) return s;
+export const getPoint = (sketch: TSketch, id: number): TGeoPoint => {
+  for (const s of sketch.geos) {
+    if (s.id === id && s.geo === EGeo.Point) return s;
   }
 
   throw "E_POINT_NOT_FOUND";
@@ -24,15 +25,17 @@ export const getPoint = (sketch: TSketch, id: number): TShapePoint => {
 
 export const makeId = () => id++;
 
-export const makeSketch = (): TSketch => ({ shapes: [], constraints: [] });
+export const makeParam = (value: number): TParam => [value];
 
-export const makeFix = (sketch: TSketch, p: TShapePoint): TConstraintFix => {
+export const makeSketch = (): TSketch => ({ geos: [], constraints: [] });
+
+export const makeFix = (sketch: TSketch, p: TGeoPoint): TConstraintFix => {
   const c: TConstraintFix = {
     id: makeId(),
     constraint: EConstraint.Fix,
     p_id: p.id,
-    x: p.x,
-    y: p.y,
+    x: p.x[0],
+    y: p.y[0],
   };
 
   sketch.constraints.push(c);
@@ -40,13 +43,13 @@ export const makeFix = (sketch: TSketch, p: TShapePoint): TConstraintFix => {
   return c;
 };
 
-export const makeDistance = (sketch: TSketch, a: TShapePoint, b: TShapePoint, d: number): TConstraintDistance => {
+export const makeDistance = (sketch: TSketch, a: TGeoPoint, b: TGeoPoint, d: number): TConstraintDistance => {
   const c: TConstraintDistance = {
     id: makeId(),
     constraint: EConstraint.Distance,
     a_id: a.id,
     b_id: b.id,
-    d: d,
+    d,
   };
 
   sketch.constraints.push(c);
@@ -54,7 +57,7 @@ export const makeDistance = (sketch: TSketch, a: TShapePoint, b: TShapePoint, d:
   return c;
 };
 
-export const makeCoincident = (sketch: TSketch, a: TShapePoint, b: TShapePoint): TConstraintCoincident => {
+export const makeCoincident = (sketch: TSketch, a: TGeoPoint, b: TGeoPoint): TConstraintCoincident => {
   const c: TConstraintCoincident = {
     id: makeId(),
     constraint: EConstraint.Coincident,
@@ -67,7 +70,7 @@ export const makeCoincident = (sketch: TSketch, a: TShapePoint, b: TShapePoint):
   return c;
 };
 
-export const makePerpendicular = (sketch: TSketch, a: TShapeSegment, b: TShapeSegment): TConstraintPerpendicular => {
+export const makePerpendicular = (sketch: TSketch, a: TGeoSegment, b: TGeoSegment): TConstraintPerpendicular => {
   const c: TConstraintPerpendicular = {
     id: makeId(),
     constraint: EConstraint.Perpendicular,
@@ -79,7 +82,7 @@ export const makePerpendicular = (sketch: TSketch, a: TShapeSegment, b: TShapeSe
 
   return c;
 };
-export const makeRadius = (sketch: TSketch, c: TShapeCircle, r: number): TConstraintRadius => {
+export const makeRadius = (sketch: TSketch, c: TGeoCircle, r: number): TConstraintRadius => {
   const con: TConstraintRadius = {
     id: makeId(),
     constraint: EConstraint.Radius,
@@ -92,15 +95,15 @@ export const makeRadius = (sketch: TSketch, c: TShapeCircle, r: number): TConstr
   return con;
 };
 
-export const makePoint = (sketch: TSketch, x: number, y: number): TShapePoint => {
-  const p: TShapePoint = {
+export const makePoint = (sketch: TSketch, x: number, y: number): TGeoPoint => {
+  const p: TGeoPoint = {
     id: makeId(),
-    shape: EShape.Point,
-    x,
-    y,
+    geo: EGeo.Point,
+    x: makeParam(x),
+    y: makeParam(y),
   };
 
-  sketch.shapes.push(p);
+  sketch.geos.push(p);
 
   return p;
 };
@@ -111,48 +114,48 @@ export const makeSegment4 = (
   ay: number,
   bx: number,
   by: number
-): [TShapeSegment, TShapePoint, TShapePoint] => {
-  const a: TShapePoint = makePoint(sketch, ax, ay);
-  const b: TShapePoint = makePoint(sketch, bx, by);
+): [TGeoSegment, TGeoPoint, TGeoPoint] => {
+  const a: TGeoPoint = makePoint(sketch, ax, ay);
+  const b: TGeoPoint = makePoint(sketch, bx, by);
 
-  const s: TShapeSegment = {
+  const s: TGeoSegment = {
     id: makeId(),
-    shape: EShape.Segment,
+    geo: EGeo.Segment,
     a_id: a.id,
     b_id: b.id,
   };
 
-  sketch.shapes.push(s);
+  sketch.geos.push(s);
 
   return [s, a, b];
 };
 
-export const makeSegment3 = (sketch: TSketch, a: TShapePoint, bx: number, by: number): [TShapeSegment, TShapePoint] => {
-  const b: TShapePoint = makePoint(sketch, bx, by);
+export const makeSegment3 = (sketch: TSketch, a: TGeoPoint, bx: number, by: number): [TGeoSegment, TGeoPoint] => {
+  const b: TGeoPoint = makePoint(sketch, bx, by);
 
-  const s: TShapeSegment = {
+  const s: TGeoSegment = {
     id: makeId(),
-    shape: EShape.Segment,
+    geo: EGeo.Segment,
     a_id: a.id,
     b_id: b.id,
   };
 
-  sketch.shapes.push(s);
+  sketch.geos.push(s);
 
   return [s, b];
 };
 
-export const makeCircle3 = (sketch: TSketch, cx: number, cy: number, r: number): [TShapeCircle, TShapePoint] => {
+export const makeCircle3 = (sketch: TSketch, cx: number, cy: number, r: number): [TGeoCircle, TGeoPoint] => {
   const c = makePoint(sketch, cx, cy);
 
-  const circle: TShapeCircle = {
+  const circle: TGeoCircle = {
     id: makeId(),
-    shape: EShape.Circle,
+    geo: EGeo.Circle,
     c_id: c.id,
-    r,
+    r: makeParam(r),
   };
 
-  sketch.shapes.push(circle);
+  sketch.geos.push(circle);
 
   return [circle, c];
 };
@@ -163,7 +166,7 @@ export const makeRect4 = (
   ay: number,
   bx: number,
   by: number
-): [TShapeSegment, TShapeSegment, TShapeSegment, TShapeSegment] => {
+): [TGeoSegment, TGeoSegment, TGeoSegment, TGeoSegment] => {
   const la = makeSegment4(sketch, ax, ay, bx, ay);
   const lb = makeSegment4(sketch, bx, ay, bx, by);
   const lc = makeSegment4(sketch, bx, by, ax, by);

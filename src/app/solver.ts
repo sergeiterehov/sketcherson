@@ -11,6 +11,7 @@ import {
   TConstraint,
   TParam,
   TConstraintPointOnCircle,
+  TConstraintPointOnLine,
 } from "./types";
 
 const ERROR_TOLERANCE = 1e-5;
@@ -21,9 +22,9 @@ export class SketchSolver {
   private _getGeo<ES extends EGeo[]>(id: number, ...types: ES): TGeo & { geo: ES[number] } {
     const geo = this.geoMap.get(id);
 
-    if (!geo) throw "E_REF";
+    if (!geo) throw new Error("E_REF");
 
-    if (types.length && !types.includes(geo.geo)) throw "E_GEO_TYPE";
+    if (types.length && !types.includes(geo.geo)) throw new Error("E_GEO_TYPE");
 
     return geo;
   }
@@ -55,7 +56,11 @@ export class SketchSolver {
     for (const constraint of this.sketch.constraints) {
       const constraintParams = this._grubConstraintGeoParams(constraint);
 
-      params.push(...constraintParams);
+      for (const param of constraintParams) {
+        if (params.includes(param)) continue;
+
+        params.push(param);
+      }
     }
 
     // Градиентный спуск ошибки с адаптивным шагом
@@ -150,8 +155,14 @@ export class SketchSolver {
         const center = this._getGeo(circle2.c_id, EGeo.Point);
         const point = this._getGeo(constraint.p_id, EGeo.Point);
         return [circle2.r, center.x, center.y, point.x, point.y];
+      case EConstraint.PointOnLine:
+        const point2 = this._getGeo(constraint.p_id, EGeo.Point);
+        const line = this._getGeo(constraint.l_id, EGeo.Segment);
+        const la = this._getGeo(line.a_id, EGeo.Point);
+        const lb = this._getGeo(line.b_id, EGeo.Point);
+        return [point2.x, point2.y, la.x, la.y, lb.x, lb.y];
       default:
-        throw "E_UNSUPPORTED_CONSTRAINT";
+        throw new Error("E_UNSUPPORTED_CONSTRAINT");
     }
   }
 
@@ -169,6 +180,8 @@ export class SketchSolver {
         return this._errorRadius(constraint);
       case EConstraint.PointOnCircle:
         return this._errorPointOnCircle(constraint);
+      case EConstraint.PointOnLine:
+        return this._errorPointOnLine(constraint);
       default:
         return 0;
     }
@@ -188,6 +201,8 @@ export class SketchSolver {
         return this._gradRadius(constraint, param);
       case EConstraint.PointOnCircle:
         return this._gradPointOnCircle(constraint, param);
+      case EConstraint.PointOnLine:
+        return this._gradPointOnLine(constraint, param);
       default:
         return 0;
     }
@@ -392,6 +407,48 @@ export class SketchSolver {
     if (param === c.x) return -dx * 2 * dErr;
     if (param === c.y) return -dy * 2 * dErr;
     if (param === circle.r) return r * 2 * dErr;
+
+    return 0;
+  }
+
+  private _errorPointOnLine(constraint: TConstraintPointOnLine): number {
+    const p = this._getGeo(constraint.p_id, EGeo.Point);
+    const line = this._getGeo(constraint.l_id, EGeo.Segment);
+    const a = this._getGeo(line.a_id, EGeo.Point);
+    const b = this._getGeo(line.b_id, EGeo.Point);
+
+    const px = p.x[0];
+    const py = p.y[0];
+    const ax = a.x[0];
+    const ay = a.y[0];
+    const bx = b.x[0];
+    const by = b.y[0];
+
+    return ((by - ay) * (px - ax) - (bx - ax) * (py - ay)) ** 2;
+  }
+
+  private _gradPointOnLine(constraint: TConstraintPointOnLine, param: TParam): number {
+    const p = this._getGeo(constraint.p_id, EGeo.Point);
+    const line = this._getGeo(constraint.l_id, EGeo.Segment);
+    const a = this._getGeo(line.a_id, EGeo.Point);
+    const b = this._getGeo(line.b_id, EGeo.Point);
+
+    const ax = a.x[0];
+    const ay = a.y[0];
+
+    const dx = b.x[0] - ax;
+    const dy = b.y[0] - ay;
+    const px = p.x[0] - ax;
+    const py = p.y[0] - ay;
+
+    const dErr = 2 * (dy * px - dx * py);
+
+    if (param === p.x) return +dy * dErr;
+    if (param === p.y) return -dx * dErr;
+    if (param === a.x) return -(dy - py) * dErr;
+    if (param === a.y) return -(px - dx) * dErr;
+    if (param === b.x) return -py * dErr;
+    if (param === b.y) return +px * dErr;
 
     return 0;
   }

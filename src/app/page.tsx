@@ -23,25 +23,32 @@ export default function Home() {
   const [solver] = useState(() => new SketchSolver(sketch));
 
   useEffect(() => {
-    const interval = 10;
+    const frameTime = 16;
 
-    const solving = solver.solve({ iterationsLimit: 1_000_000, logDivider: 1_000 });
+    const solving = solver.solve({ iterationsLimit: 1_000_000, logDivider: 2_000 });
 
-    let timeout: ReturnType<typeof setTimeout>;
+    let prevStepAt = 0;
+    let animRequest = 0;
 
-    const next = () => {
+    const loop = () => {
+      animRequest = requestAnimationFrame(loop);
+
+      const now = Date.now();
+
+      if (now - prevStepAt < frameTime) return;
+
+      prevStepAt = now;
+
       const { done, value } = solving.next();
 
       if (done) return;
 
       setStat(value);
-
-      timeout = setTimeout(next, interval);
     };
 
-    next();
+    loop();
 
-    return () => clearTimeout(timeout);
+    return () => cancelAnimationFrame(animRequest);
   }, [solver]);
 
   const geoMap = new Map<number, TGeo>();
@@ -78,8 +85,8 @@ export default function Home() {
                 const a = geoMap.get(s.a_id);
                 const b = geoMap.get(s.b_id);
 
-                if (!a || !b) throw "E_REF";
-                if (a.geo !== EGeo.Point || b.geo !== EGeo.Point) throw "E_SHAPE_TYPE";
+                if (!a || !b) throw new Error("E_REF");
+                if (a.geo !== EGeo.Point || b.geo !== EGeo.Point) throw new Error("E_SHAPE_TYPE");
 
                 return (
                   <line
@@ -95,8 +102,8 @@ export default function Home() {
               } else if (s.geo === EGeo.Circle) {
                 const c = geoMap.get(s.c_id);
 
-                if (!c) throw "E_REF";
-                if (c.geo !== EGeo.Point) throw "E_SHAPE_TYPE";
+                if (!c) throw new Error("E_REF");
+                if (c.geo !== EGeo.Point) throw new Error("E_SHAPE_TYPE");
 
                 return (
                   <circle

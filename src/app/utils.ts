@@ -6,6 +6,7 @@ import {
   TConstraintFix,
   TConstraintPerpendicular,
   TConstraintPointOnCircle,
+  TConstraintPointOnLine,
   TConstraintRadius,
   TGeoCircle,
   TGeoPoint,
@@ -21,7 +22,7 @@ export const getPoint = (sketch: TSketch, id: number): TGeoPoint => {
     if (s.id === id && s.geo === EGeo.Point) return s;
   }
 
-  throw "E_POINT_NOT_FOUND";
+  throw new Error("E_POINT_NOT_FOUND");
 };
 
 export const makeId = () => id++;
@@ -103,6 +104,19 @@ export const makePointOnCircle = (sketch: TSketch, p: TGeoPoint, c: TGeoCircle):
     constraint: EConstraint.PointOnCircle,
     p_id: p.id,
     c_id: c.id,
+  };
+
+  sketch.constraints.push(con);
+
+  return con;
+};
+
+export const makePointOnLine = (sketch: TSketch, p: TGeoPoint, l: TGeoSegment): TConstraintPointOnLine => {
+  const con: TConstraintPointOnLine = {
+    id: makeId(),
+    constraint: EConstraint.PointOnLine,
+    p_id: p.id,
+    l_id: l.id,
   };
 
   sketch.constraints.push(con);

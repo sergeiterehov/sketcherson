@@ -4,6 +4,8 @@ import { TSketch, EGeo, TGeo } from "./types";
 import { sampleSketch } from "./sampleSketch";
 import { SketchSolver } from "./solver";
 
+const scale = 1;
+
 export default function Home() {
   const [viewSize, setViewSize] = useState(() => ({ width: 600, height: 600 }));
 
@@ -16,22 +18,31 @@ export default function Home() {
     []
   );
 
-  const [iter, setIter] = useState(0);
+  const [stat, setStat] = useState({ error: 0, lambda: 0, i: 0 });
   const [sketch] = useState<TSketch>(() => JSON.parse(JSON.stringify(sampleSketch)));
   const [solver] = useState(() => new SketchSolver(sketch));
 
-  const handleClick = () => {
-    const limit = 1000;
-
-    solver.solve(limit);
-    setIter((prev) => prev + limit);
-  };
-
   useEffect(() => {
-    const timeout = setInterval(handleClick, 10);
+    const interval = 10;
 
-    return () => clearInterval(timeout);
-  }, []);
+    const solving = solver.solve({ iterationsLimit: 1_000_000, logDivider: 1_000 });
+
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const next = () => {
+      const { done, value } = solving.next();
+
+      if (done) return;
+
+      setStat(value);
+
+      timeout = setTimeout(next, interval);
+    };
+
+    next();
+
+    return () => clearTimeout(timeout);
+  }, [solver]);
 
   const geoMap = new Map<number, TGeo>();
 
@@ -51,8 +62,10 @@ export default function Home() {
   const pointRadius = 2;
 
   return (
-    <div onClick={handleClick}>
-      <div>Tools: iter={iter}</div>
+    <div>
+      <div>
+        Tools: i={stat.i}, error={stat.error}, l={stat.lambda}
+      </div>
       <div>
         <svg width={width} height={height}>
           <g transform={`translate(${width / 2},${height / 2})`}>
@@ -71,10 +84,10 @@ export default function Home() {
                 return (
                   <line
                     key={s.id}
-                    x1={a.x[0]}
-                    y1={a.y[0]}
-                    x2={b.x[0]}
-                    y2={b.y[0]}
+                    x1={a.x[0] * scale}
+                    y1={a.y[0] * scale}
+                    x2={b.x[0] * scale}
+                    y2={b.y[0] * scale}
                     strokeWidth={curveWidth}
                     stroke={curveColor}
                   />
@@ -88,9 +101,9 @@ export default function Home() {
                 return (
                   <circle
                     key={s.id}
-                    cx={c.x[0]}
-                    cy={c.y[0]}
-                    r={s.r[0]}
+                    cx={c.x[0] * scale}
+                    cy={c.y[0] * scale}
+                    r={s.r[0] * scale}
                     strokeWidth={curveWidth}
                     stroke={curveColor}
                     fill="none"
@@ -101,7 +114,7 @@ export default function Home() {
             {/* points layer */}
             {sketch.geos.map((s) => {
               if (s.geo === EGeo.Point) {
-                return <circle key={s.id} cx={s.x[0]} cy={s.y[0]} r={pointRadius} fill={pointColor} />;
+                return <circle key={s.id} cx={s.x[0] * scale} cy={s.y[0] * scale} r={pointRadius} fill={pointColor} />;
               }
             })}
           </g>

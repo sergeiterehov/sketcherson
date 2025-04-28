@@ -44,11 +44,16 @@ export class SketchSolver {
   }
 
   *solve(config: {
+    /** Ограничение количества итераций */
     iterationsLimit?: number;
+    /** yeld-лог каждый n итераций */
     logDivider?: number;
+    /** Ограничение по времени в мс */
     timeLimit?: number;
+    /** Возврат к исходному состоянию при ошибке */
+    rollbackOnError?: boolean;
   }): Generator<{ error: number; lambda: number; i: number }, void> {
-    const { iterationsLimit = 1_000, logDivider, timeLimit } = config;
+    const { iterationsLimit = 1_000_000, logDivider, timeLimit, rollbackOnError = true } = config;
     const statedAt = Date.now();
 
     const params: TParam[] = [];
@@ -74,17 +79,32 @@ export class SketchSolver {
       error += this._error(constraint);
     }
 
+    /** Градиенты для параметров */
+    const grads = new Map<TParam, TParam>();
+
+    for (const param of params) {
+      grads.set(param, [0]);
+    }
+
+    /** Значения параметров для отмены шага */
     const backup: number[] = new Array(params.length);
 
-    for (let i = 1; i <= iterationsLimit; i += 1) {
+    /** Значения параметров для возврата в исходную позицию */
+    const initialParams: number[] = new Array(params.length);
+
+    for (let pi = params.length - 1; pi >= 0; pi -= 1) {
+      initialParams[pi] = params[pi][0];
+    }
+
+    for (let i = 0; i <= iterationsLimit; i += 1) {
       // Логирование для отладки
       if (logDivider && i % logDivider === 0) yield { error, lambda, i };
 
+      // Останавливаемся, если ошибка достигла минимума
+      if (error < ERROR_TOLERANCE) return;
+
       // Прерывание по таймауту
       if (timeLimit && i % 100 === 0 && Date.now() - statedAt > timeLimit) break;
-
-      // Останавливаемся, если ошибка достигла минимума
-      if (error < ERROR_TOLERANCE) break;
 
       // Крайние значения, из которых не выбраться
       if (lambda === Infinity || lambda === 0) break;
@@ -95,13 +115,15 @@ export class SketchSolver {
       }
 
       // Обновляем параметры градиентным спуском ошибки
-      for (const param of params) {
-        let grad = 0;
+      for (const grad of grads.values()) {
+        grad[0] = 0;
+      }
 
-        for (const constraint of this.sketch.constraints) {
-          grad += this._grad(constraint, param);
-        }
+      for (const constraint of this.sketch.constraints) {
+        this._grad(constraint, grads);
+      }
 
+      for (const [param, [grad]] of grads.entries()) {
         param[0] -= grad / (lambda + Math.abs(grad));
       }
 
@@ -124,6 +146,16 @@ export class SketchSolver {
         }
       }
     }
+    // Если вышли из цикла, а не из функции, значит решение не найдено
+
+    // Возвращаем значения обратно к исходным
+    if (rollbackOnError) {
+      for (let pi = params.length - 1; pi >= 0; pi -= 1) {
+        params[pi][0] = initialParams[pi];
+      }
+    }
+
+    throw new Error("SOLUTION_NOT_FOUND");
   }
 
   private _grubConstraintGeoParams(constraint: TConstraint): TParam[] {
@@ -187,24 +219,24 @@ export class SketchSolver {
     }
   }
 
-  private _grad(constraint: TConstraint, param: TParam): number {
+  private _grad(constraint: TConstraint, params: Map<TParam, TParam>): void {
     switch (constraint.constraint) {
       case EConstraint.Fix:
-        return this._gradFix(constraint, param);
+        return this._gradFix(constraint, params);
       case EConstraint.Distance:
-        return this._gradDistance(constraint, param);
+        return this._gradDistance(constraint, params);
       case EConstraint.Perpendicular:
-        return this._gradPerpendicular(constraint, param);
+        return this._gradPerpendicular(constraint, params);
       case EConstraint.Coincident:
-        return this._gradCoincident(constraint, param);
+        return this._gradCoincident(constraint, params);
       case EConstraint.Radius:
-        return this._gradRadius(constraint, param);
+        return this._gradRadius(constraint, params);
       case EConstraint.PointOnCircle:
-        return this._gradPointOnCircle(constraint, param);
+        return this._gradPointOnCircle(constraint, params);
       case EConstraint.PointOnLine:
-        return this._gradPointOnLine(constraint, param);
+        return this._gradPointOnLine(constraint, params);
       default:
-        return 0;
+        return;
     }
   }
 
@@ -219,7 +251,7 @@ export class SketchSolver {
     return err;
   }
 
-  private _gradFix(constraint: TConstraintFix, param: TParam): number {
+  private _gradFix(constraint: TConstraintFix, params: Map<TParam, TParam>) {
     const p = this._getGeo(constraint.p_id, EGeo.Point);
 
     const ax = p.x[0];
@@ -228,10 +260,8 @@ export class SketchSolver {
     const dx = 2 * (ax - constraint.x);
     const dy = 2 * (ay - constraint.y);
 
-    if (param === p.x) return +dx;
-    if (param === p.y) return +dy;
-
-    return 0;
+    params.get(p.x)![0] += +dx;
+    params.get(p.y)![0] += +dy;
   }
 
   private _errorDistance(constraint: TConstraintDistance): number {
@@ -247,7 +277,7 @@ export class SketchSolver {
     return err;
   }
 
-  private _gradDistance(constraint: TConstraintDistance, param: TParam): number {
+  private _gradDistance(constraint: TConstraintDistance, params: Map<TParam, TParam>) {
     const a = this._getGeo(constraint.a_id, EGeo.Point);
     const b = this._getGeo(constraint.b_id, EGeo.Point);
 
@@ -258,12 +288,10 @@ export class SketchSolver {
 
     const dErr = (2 * (d - constraint.d)) / Math.max(ERROR_TOLERANCE, d);
 
-    if (param === a.x) return -dx * dErr;
-    if (param === a.y) return -dy * dErr;
-    if (param === b.x) return +dx * dErr;
-    if (param === b.y) return +dy * dErr;
-
-    return 0;
+    params.get(a.x)![0] += -dx * dErr;
+    params.get(a.y)![0] += -dy * dErr;
+    params.get(b.x)![0] += +dx * dErr;
+    params.get(b.y)![0] += +dy * dErr;
   }
 
   private _errorPerpendicular(constraint: TConstraintPerpendicular): number {
@@ -285,7 +313,7 @@ export class SketchSolver {
     return err;
   }
 
-  private _gradPerpendicular(constraint: TConstraintPerpendicular, param: TParam): number {
+  private _gradPerpendicular(constraint: TConstraintPerpendicular, params: Map<TParam, TParam>) {
     const a = this._getGeo(constraint.a_id, EGeo.Segment);
     const b = this._getGeo(constraint.b_id, EGeo.Segment);
 
@@ -301,16 +329,14 @@ export class SketchSolver {
 
     const dErr = 2 * (dx1 * dx2 + dy1 * dy2);
 
-    if (param === A.x) return -dx2 * dErr;
-    if (param === A.y) return -dy2 * dErr;
-    if (param === B.x) return +dx2 * dErr;
-    if (param === B.y) return +dy2 * dErr;
-    if (param === C.x) return -dx1 * dErr;
-    if (param === C.y) return -dy1 * dErr;
-    if (param === D.x) return +dx1 * dErr;
-    if (param === D.y) return +dy1 * dErr;
-
-    return 0;
+    params.get(A.x)![0] += -dx2 * dErr;
+    params.get(A.y)![0] += -dy2 * dErr;
+    params.get(B.x)![0] += +dx2 * dErr;
+    params.get(B.y)![0] += +dy2 * dErr;
+    params.get(C.x)![0] += -dx1 * dErr;
+    params.get(C.y)![0] += -dy1 * dErr;
+    params.get(D.x)![0] += +dx1 * dErr;
+    params.get(D.y)![0] += +dy1 * dErr;
   }
 
   private _errorCoincident(constraint: TConstraintCoincident): number {
@@ -325,7 +351,7 @@ export class SketchSolver {
     return err;
   }
 
-  private _gradCoincident(constraint: TConstraintCoincident, param: TParam): number {
+  private _gradCoincident(constraint: TConstraintCoincident, params: Map<TParam, TParam>) {
     const a = this._getGeo(constraint.a_id, EGeo.Point);
     const b = this._getGeo(constraint.b_id, EGeo.Point);
 
@@ -337,12 +363,10 @@ export class SketchSolver {
     const dx = 2 * (ax - bx);
     const dy = 2 * (ay - by);
 
-    if (param === a.x) return +dx;
-    if (param === a.y) return +dy;
-    if (param === b.x) return -dx;
-    if (param === b.y) return -dy;
-
-    return 0;
+    params.get(a.x)![0] += +dx;
+    params.get(a.y)![0] += +dy;
+    params.get(b.x)![0] += -dx;
+    params.get(b.y)![0] += -dy;
   }
 
   private _errorRadius(constraint: TConstraintRadius): number {
@@ -355,14 +379,12 @@ export class SketchSolver {
     return err;
   }
 
-  private _gradRadius(constraint: TConstraintRadius, param: TParam): number {
+  private _gradRadius(constraint: TConstraintRadius, params: Map<TParam, TParam>) {
     const c = this._getGeo(constraint.c_id, EGeo.Circle);
 
     const dr = 2 * (c.r[0] - constraint.r);
 
-    if (param === c.r) return +dr;
-
-    return 0;
+    params.get(c.r)![0] += +dr;
   }
 
   private _errorPointOnCircle(constraint: TConstraintPointOnCircle): number {
@@ -385,7 +407,7 @@ export class SketchSolver {
     return err;
   }
 
-  private _gradPointOnCircle(constraint: TConstraintPointOnCircle, param: TParam): number {
+  private _gradPointOnCircle(constraint: TConstraintPointOnCircle, params: Map<TParam, TParam>) {
     const circle = this._getGeo(constraint.c_id, EGeo.Circle);
     const p = this._getGeo(constraint.p_id, EGeo.Point);
     const c = this._getGeo(circle.c_id, EGeo.Point);
@@ -402,13 +424,11 @@ export class SketchSolver {
 
     const dErr = 2 * (dist_2 - r ** 2);
 
-    if (param === p.x) return +dx * 2 * dErr;
-    if (param === p.y) return +dy * 2 * dErr;
-    if (param === c.x) return -dx * 2 * dErr;
-    if (param === c.y) return -dy * 2 * dErr;
-    if (param === circle.r) return r * 2 * dErr;
-
-    return 0;
+    params.get(p.x)![0] += +dx * 2 * dErr;
+    params.get(p.y)![0] += +dy * 2 * dErr;
+    params.get(c.x)![0] += -dx * 2 * dErr;
+    params.get(c.y)![0] += -dy * 2 * dErr;
+    params.get(circle.r)![0] += r * 2 * dErr;
   }
 
   private _errorPointOnLine(constraint: TConstraintPointOnLine): number {
@@ -427,7 +447,7 @@ export class SketchSolver {
     return ((by - ay) * (px - ax) - (bx - ax) * (py - ay)) ** 2;
   }
 
-  private _gradPointOnLine(constraint: TConstraintPointOnLine, param: TParam): number {
+  private _gradPointOnLine(constraint: TConstraintPointOnLine, params: Map<TParam, TParam>) {
     const p = this._getGeo(constraint.p_id, EGeo.Point);
     const line = this._getGeo(constraint.l_id, EGeo.Segment);
     const a = this._getGeo(line.a_id, EGeo.Point);
@@ -443,13 +463,11 @@ export class SketchSolver {
 
     const dErr = 2 * (dy * px - dx * py);
 
-    if (param === p.x) return +dy * dErr;
-    if (param === p.y) return -dx * dErr;
-    if (param === a.x) return -(dy - py) * dErr;
-    if (param === a.y) return -(px - dx) * dErr;
-    if (param === b.x) return -py * dErr;
-    if (param === b.y) return +px * dErr;
-
-    return 0;
+    params.get(p.x)![0] += +dy * dErr;
+    params.get(p.y)![0] += -dx * dErr;
+    params.get(a.x)![0] += -(dy - py) * dErr;
+    params.get(a.y)![0] += -(px - dx) * dErr;
+    params.get(b.x)![0] += -py * dErr;
+    params.get(b.y)![0] += +px * dErr;
   }
 }

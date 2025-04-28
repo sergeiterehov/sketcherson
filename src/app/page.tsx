@@ -25,7 +25,7 @@ export default function Home() {
   useEffect(() => {
     const frameTime = 16;
 
-    const solving = solver.solve({ iterationsLimit: 1_000_000, logDivider: 2_000 });
+    const solving = solver.solve({ rollbackOnError: false, iterationsLimit: 10_000_000, logDivider: 20_000 });
 
     let prevStepAt = 0;
     let animRequest = 0;
@@ -39,11 +39,16 @@ export default function Home() {
 
       prevStepAt = now;
 
-      const { done, value } = solving.next();
+      try {
+        const { done, value } = solving.next();
 
-      if (done) return;
+        if (done) return;
 
-      setStat(value);
+        setStat(value);
+      } catch (e) {
+        setStat({ error: -1, i: -1, lambda: -1 });
+        throw e;
+      }
     };
 
     loop();

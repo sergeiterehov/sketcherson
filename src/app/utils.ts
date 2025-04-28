@@ -5,6 +5,7 @@ import {
   TConstraintDistance,
   TConstraintFix,
   TConstraintPerpendicular,
+  TConstraintPointOnCircle,
   TConstraintRadius,
   TGeoCircle,
   TGeoPoint,
@@ -82,12 +83,26 @@ export const makePerpendicular = (sketch: TSketch, a: TGeoSegment, b: TGeoSegmen
 
   return c;
 };
+
 export const makeRadius = (sketch: TSketch, c: TGeoCircle, r: number): TConstraintRadius => {
   const con: TConstraintRadius = {
     id: makeId(),
     constraint: EConstraint.Radius,
     c_id: c.id,
     r,
+  };
+
+  sketch.constraints.push(con);
+
+  return con;
+};
+
+export const makePointOnCircle = (sketch: TSketch, p: TGeoPoint, c: TGeoCircle): TConstraintPointOnCircle => {
+  const con: TConstraintPointOnCircle = {
+    id: makeId(),
+    constraint: EConstraint.PointOnCircle,
+    p_id: p.id,
+    c_id: c.id,
   };
 
   sketch.constraints.push(con);

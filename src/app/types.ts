@@ -17,6 +17,7 @@ export enum EConstraint {
   Coincident = "coincident",
   Fix = "fix",
   Radius = "radius",
+  PointOnCircle = "point_on_circle",
 }
 
 export type TSomeGeo<E extends EGeo, T extends object> = TIdentified<{ geo: E } & T>;
@@ -106,13 +107,22 @@ export type TConstraintRadius = TSomeConstraint<
   }
 >;
 
+export type TConstraintPointOnCircle = TSomeConstraint<
+  EConstraint.PointOnCircle,
+  {
+    p_id: TID;
+    c_id: TID;
+  }
+>;
+
 export type TConstraint =
   | TConstraintEquals
   | TConstraintDistance
   | TConstraintPerpendicular
   | TConstraintCoincident
   | TConstraintFix
-  | TConstraintRadius;
+  | TConstraintRadius
+  | TConstraintPointOnCircle;
 
 export type TSketch = {
   geos: TGeo[];

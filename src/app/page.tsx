@@ -16,16 +16,15 @@ export default function Home() {
     []
   );
 
-  const [sketch, setSketch] = useState<TSketch>(() => JSON.parse(JSON.stringify(sampleSketch)));
+  const [iter, setIter] = useState(0);
+  const [sketch] = useState<TSketch>(() => JSON.parse(JSON.stringify(sampleSketch)));
+  const [solver] = useState(() => new SketchSolver(sketch));
 
   const handleClick = () => {
-    const next = { ...sketch };
+    const limit = 1000;
 
-    const solver = new SketchSolver(next);
-
-    for (let i = 0; i < 1; i += 1) solver.solve();
-
-    setSketch(next);
+    solver.solve(limit);
+    setIter((prev) => prev + limit);
   };
 
   useEffect(() => {
@@ -53,7 +52,7 @@ export default function Home() {
 
   return (
     <div onClick={handleClick}>
-      <div>Tools</div>
+      <div>Tools: iter={iter}</div>
       <div>
         <svg width={width} height={height}>
           <g transform={`translate(${width / 2},${height / 2})`}>

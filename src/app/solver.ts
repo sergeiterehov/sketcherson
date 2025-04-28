@@ -10,7 +10,10 @@ import {
   EConstraint,
   TConstraint,
   TParam,
+  TConstraintPointOnCircle,
 } from "./types";
+
+const ERROR_TOLERANCE = 1e-6;
 
 export class SketchSolver {
   private geoMap = new Map<number, TGeo>();
@@ -86,12 +89,17 @@ export class SketchSolver {
         const b2 = this._getGeo(B.b_id, EGeo.Point);
         return [a1.x, a1.y, a2.x, a2.y, b1.x, b1.y, b2.x, b2.y];
       case EConstraint.Coincident:
-        const aCoincident = this._getGeo(constraint.a_id, EGeo.Point);
-        const bCoincident = this._getGeo(constraint.b_id, EGeo.Point);
-        return [aCoincident.x, aCoincident.y, bCoincident.x, bCoincident.y];
+        const pa = this._getGeo(constraint.a_id, EGeo.Point);
+        const pb = this._getGeo(constraint.b_id, EGeo.Point);
+        return [pa.x, pa.y, pb.x, pb.y];
       case EConstraint.Radius:
         const circle = this._getGeo(constraint.c_id, EGeo.Circle);
         return [circle.r];
+      case EConstraint.PointOnCircle:
+        const circle2 = this._getGeo(constraint.c_id, EGeo.Circle);
+        const center = this._getGeo(circle2.c_id, EGeo.Point);
+        const point = this._getGeo(constraint.p_id, EGeo.Point);
+        return [circle2.r, center.x, center.y, point.x, point.y];
       default:
         throw "E_UNSUPPORTED_CONSTRAINT";
     }
@@ -109,6 +117,8 @@ export class SketchSolver {
         return this._gradFix(constraint, param);
       case EConstraint.Radius:
         return this._gradRadius(constraint, param);
+      case EConstraint.PointOnCircle:
+        return this._gradPointOnCircle(constraint, param);
       default:
         return 0;
     }
@@ -122,7 +132,7 @@ export class SketchSolver {
 
     const err = Math.abs(dx) + Math.abs(dy);
 
-    if (Math.abs(err) < 1e-6) return 0;
+    if (Math.abs(err) < ERROR_TOLERANCE) return 0;
 
     if (param === p.x) return dx;
     if (param === p.y) return dy;
@@ -140,7 +150,7 @@ export class SketchSolver {
 
     const err = d - constraint.d;
 
-    if (Math.abs(err) < 1e-6) return 0;
+    if (Math.abs(err) < ERROR_TOLERANCE) return 0;
 
     const ratio = err / (d || 1);
 
@@ -168,7 +178,7 @@ export class SketchSolver {
 
     const err = dx1 * dx2 + dy1 * dy2;
 
-    if (Math.abs(err) < 1e-6) return 0;
+    if (Math.abs(err) < ERROR_TOLERANCE) return 0;
 
     const force = err * 0.001;
 
@@ -198,7 +208,7 @@ export class SketchSolver {
 
     const err = Math.sqrt(dx * dx + dy * dy);
 
-    if (Math.abs(err) < 1e-6) return 0;
+    if (Math.abs(err) < ERROR_TOLERANCE) return 0;
 
     const tx = (ax + bx) / 2;
     const ty = (ay + by) / 2;
@@ -219,9 +229,44 @@ export class SketchSolver {
 
     const err = currentRadius - targetRadius;
 
-    if (Math.abs(err) < 1e-6) return 0;
+    if (Math.abs(err) < ERROR_TOLERANCE) return 0;
 
     if (param === circle.r) return -err;
+
+    return 0;
+  }
+
+  private _gradPointOnCircle(constraint: TConstraintPointOnCircle, param: TParam): number {
+    const point = this._getGeo(constraint.p_id, EGeo.Point);
+    const circle = this._getGeo(constraint.c_id, EGeo.Circle);
+    const center = this._getGeo(circle.c_id, EGeo.Point);
+
+    const px = point.x[0];
+    const py = point.y[0];
+    const cx = center.x[0];
+    const cy = center.y[0];
+    const r = circle.r[0];
+
+    const dx = px - cx;
+    const dy = py - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const diff = dist - r;
+
+    const err = -diff;
+
+    if (Math.abs(err) < ERROR_TOLERANCE) return 0;
+
+    const scale = r / dist;
+    const ptx = cx + dx * scale;
+    const pty = cy + dy * scale;
+    const ctx = px - dx * scale;
+    const cty = py - dy * scale;
+
+    if (param === point.x) return ptx - px;
+    if (param === point.y) return pty - py;
+    if (param === center.x) return ctx - cx;
+    if (param === center.y) return cty - cy;
+    if (param === circle.r) return diff;
 
     return 0;
   }

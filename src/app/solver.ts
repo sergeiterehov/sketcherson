@@ -56,9 +56,11 @@ export class SketchSolver {
     const { iterationsLimit = 1_000_000, logDivider, timeLimit, rollbackOnError = true } = config;
     const statedAt = Date.now();
 
+    const { constraints } = this.sketch;
+
     const params: TParam[] = [];
 
-    for (const constraint of this.sketch.constraints) {
+    for (const constraint of constraints) {
       const constraintParams = this._grubConstraintGeoParams(constraint);
 
       for (const param of constraintParams) {
@@ -75,7 +77,7 @@ export class SketchSolver {
     let lambda = 0.001;
     let error = 0;
 
-    for (const constraint of this.sketch.constraints) {
+    for (const constraint of constraints) {
       error += this._error(constraint);
     }
 
@@ -119,7 +121,7 @@ export class SketchSolver {
         grad[0] = 0;
       }
 
-      for (const constraint of this.sketch.constraints) {
+      for (const constraint of constraints) {
         this._grad(constraint, grads);
       }
 
@@ -130,7 +132,7 @@ export class SketchSolver {
       // Корректируем настройки, если ошибка растет
       let stepError = 0;
 
-      for (const constraint of this.sketch.constraints) {
+      for (const constraint of constraints) {
         stepError += this._error(constraint);
       }
 

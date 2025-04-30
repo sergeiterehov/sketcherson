@@ -24,6 +24,13 @@ type TEditorStore = {
   allowPointOnLine: boolean;
   allowPointOnCircle: boolean;
 
+  paramsOfSelectedGeo: {
+    radius?: number;
+    length?: number;
+    angle?: number;
+    distance?: number;
+  };
+
   init(sketch: TSketch): void;
   reset(): void;
 
@@ -39,6 +46,8 @@ type TEditorStore = {
   createCoincident(): void;
   createPointOnLine(): void;
   createPointOnCircle(): void;
+
+  _explainSelectedParams(): void;
 
   _abort(): void;
   _solve(): void;
@@ -58,6 +67,8 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
   allowCoincident: false,
   allowPointOnLine: false,
   allowPointOnCircle: false,
+
+  paramsOfSelectedGeo: {},
 
   init: (sketch) => {
     const { _abort, resetGeoSelection, _solve, _updateGeoMap } = get();
@@ -81,6 +92,7 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
   resetGeoSelection: () => {
     set({ selectedGeoIds: [] });
     get()._updateCoincidentAllows();
+    get()._explainSelectedParams();
   },
 
   toggleGeoSelection: (id) => {
@@ -92,6 +104,7 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
       return { selectedGeoIds: [...prev, id] };
     });
     get()._updateCoincidentAllows();
+    get()._explainSelectedParams();
   },
 
   getSelectedGeos: () => {
@@ -241,6 +254,36 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
     resetGeoSelection();
     _solve();
+  },
+
+  _explainSelectedParams: () => {
+    const params: TEditorStore["paramsOfSelectedGeo"] = {};
+
+    const { getSelectedGeos, getGeo } = get();
+    const geos = getSelectedGeos();
+
+    if (geos.length === 1) {
+      const [geo] = geos;
+
+      if (geo.geo === EGeo.Segment) {
+        const a = getGeo(geo.a_id);
+        const b = getGeo(geo.b_id);
+
+        if (a.geo !== EGeo.Point || b.geo !== EGeo.Point) return;
+
+        params.length = Math.sqrt((a.x[0] - b.x[0]) ** 2 + (a.y[0] - b.y[0]) ** 2);
+      } else if (geo.geo === EGeo.Circle) {
+        params.radius = geo.r[0];
+      }
+    } else if (geos.length === 2) {
+      const [geo_1, geo_2] = geos;
+
+      if (geo_1.geo === EGeo.Point && geo_2.geo === EGeo.Point) {
+        params.distance = Math.sqrt((geo_1.x[0] - geo_2.x[0]) ** 2 + (geo_1.y[0] - geo_2.y[0]) ** 2);
+      }
+    }
+
+    set({ paramsOfSelectedGeo: params });
   },
 
   _abort: () => {

@@ -19,6 +19,7 @@ export default function SketchSvg(props: { width: number; height: number }) {
 
   const sketch = useEditorStore((s) => s.sketch);
   const stat = useEditorStore((s) => s.solvingStats);
+  const paramsOfSelectedGeo = useEditorStore((s) => s.paramsOfSelectedGeo);
   const selectedGeoIds = useEditorStore((s) => s.selectedGeoIds);
   const toggleGeoSelection = useEditorStore((s) => s.toggleGeoSelection);
   const getGeo = useEditorStore((s) => s.getGeo);
@@ -102,14 +103,24 @@ export default function SketchSvg(props: { width: number; height: number }) {
           <tspan x="0" dy="1.2em">
             i={stat.i.toLocaleString()}
           </tspan>
-          <tspan x="0" dy="1.2em">
+          <tspan dx="24px">
             e={stat.error.toLocaleString()}
           </tspan>
           <tspan x="0" dy="1.2em">
-            l={stat.lambda.toLocaleString()}
+            Selection: {selectedGeoIds.join(", ") || "-"}
           </tspan>
           <tspan x="0" dy="1.2em">
-            Selection: {selectedGeoIds.join(", ") || "-"}
+            Params:{" "}
+            {[
+              paramsOfSelectedGeo.length !== undefined && `Length=${paramsOfSelectedGeo.length.toLocaleString()}`,
+              paramsOfSelectedGeo.distance !== undefined && `Distance=${paramsOfSelectedGeo.distance.toLocaleString()}`,
+              paramsOfSelectedGeo.radius !== undefined &&
+                `Radius=${paramsOfSelectedGeo.radius.toLocaleString()}, D=${(
+                  paramsOfSelectedGeo.radius * 2
+                ).toLocaleString()}`,
+            ]
+              .filter(Boolean)
+              .join("; ") || "-"}
           </tspan>
         </text>
       </g>

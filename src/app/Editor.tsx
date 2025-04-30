@@ -5,7 +5,7 @@ import { TSketch, EGeo, TGeo, TID } from "./types";
 import { sampleSketch } from "./sampleSketch";
 import { SketchSolver } from "./solver";
 import { TollBar, ToolBarButton } from "@/components/toolbar";
-import { makeCoincident, makePointOnLine } from "./utils";
+import { makeCoincident, makePointOnCircle, makePointOnLine } from "./utils";
 
 export default function Editor() {
   const viewSize = useWindowSize();
@@ -55,11 +55,14 @@ export default function Editor() {
       try {
         const { done, value } = solving.next();
 
-        if (done) return;
+        if (done) {
+          setStat({ error: 0, i: 0, lambda: 0 });
+          return;
+        }
 
         setStat(value);
       } catch (e) {
-        setStat({ error: -1, i: -1, lambda: -1 });
+        setStat({ error: -1, i: 0, lambda: 0 });
         console.error("Solving error:", e);
       }
     };
@@ -149,6 +152,45 @@ export default function Editor() {
   }, [selectedGeos, sketch, solve]);
   useKey("l", handlePointOnLineClick, {}, [handlePointOnLineClick]);
 
+  const allowPointOnCircle = useMemo(() => {
+    if (selectedGeos.length < 2) return false;
+
+    let circles = 0;
+    let points = 0;
+
+    for (const geo of selectedGeos) {
+      if (geo.geo === EGeo.Circle) {
+        circles += 1;
+      } else if (geo.geo === EGeo.Point) {
+        points += 1;
+      }
+
+      if (circles > 1) return false;
+    }
+
+    if (!circles || !points) return false;
+
+    return true;
+  }, [selectedGeos]);
+  const handlePointOnCircleClick = useCallback(() => {
+    if (selectedGeos.length < 2) return;
+
+    const circle = selectedGeos.find((g) => g.geo === EGeo.Circle);
+
+    if (!circle) return;
+
+    for (const geo of selectedGeos) {
+      if (geo.geo !== EGeo.Point) continue;
+
+      makePointOnCircle(sketch, geo, circle);
+    }
+
+    setSelectedGeoIds([]);
+
+    solve();
+  }, [selectedGeos, sketch, solve]);
+  useKey("q", handlePointOnCircleClick, {}, [handlePointOnCircleClick]);
+
   useEffect(() => {
     solve();
 
@@ -176,6 +218,13 @@ export default function Editor() {
         </ToolBarButton>
         <ToolBarButton aria-disabled={!allowPointOnLine} title="Point on line [L]" onClick={handlePointOnLineClick}>
           L
+        </ToolBarButton>
+        <ToolBarButton
+          aria-disabled={!allowPointOnCircle}
+          title="Point on circle [Q]"
+          onClick={handlePointOnCircleClick}
+        >
+          Q
         </ToolBarButton>
       </TollBar>
       <div>

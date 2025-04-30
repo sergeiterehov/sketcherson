@@ -11,6 +11,8 @@ export const ToolBarButton = styled.div({
   backgroundColor: "#AAA",
   color: "#666",
   overflow: "hidden",
+  fontSize: 24,
+  lineHeight: "1em",
 
   ":not([aria-disabled='true'])": {
     cursor: "pointer",
@@ -27,4 +29,5 @@ export const TollBar = styled.div({
   display: "flex",
   gap: 4,
   backgroundColor: "#999",
+  alignItems: "center",
 });

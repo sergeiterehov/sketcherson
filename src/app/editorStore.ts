@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { SketchSolver } from "./solver";
-import { EGeo, TGeo, TID, TSketch } from "./types";
+import { EConstraint, EGeo, TConstraint, TGeo, TID, TSketch } from "./types";
 import { makeCoincident, makePointOnCircle, makePointOnLine } from "./utils";
 
 type TEditorStore = {
@@ -37,10 +37,12 @@ type TEditorStore = {
   setScale(scale: number): void;
 
   resetGeoSelection(): void;
-  toggleGeoSelection(id: number): void;
+  toggleGeoSelection(id: TID): void;
   getSelectedGeos(): TGeo[];
 
-  getGeo(id: number): TGeo;
+  getGeo(id: TID): TGeo;
+  getGeoOf<G extends EGeo>(type: G, id: TID): TGeo & { geo: G };
+  getGeoConstraints(id: TID): TConstraint[];
 
   _updateCoincidentAllows(): void;
   createCoincident(): void;
@@ -133,6 +135,43 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     if (!geo) throw new Error(`Geo ID:${id} not found in map`);
 
     return geo;
+  },
+
+  getGeoOf: (type, id) => {
+    const geo = get().getGeo(id);
+
+    if (geo.geo !== type) throw new Error(`Geo ID:${id} has type ${geo.geo}, but ${type} required`);
+
+    return geo as TGeo & { geo: typeof type };
+  },
+
+  getGeoConstraints: (id) => {
+    // TODO: переделать на map, обновляемый в _updateGeoMap
+    const result: TConstraint[] = [];
+
+    const { sketch } = get();
+
+    if (!sketch) return result;
+
+    for (const c of sketch.constraints) {
+      let ok = false;
+
+      if (c.constraint === EConstraint.Perpendicular) {
+        ok = c.a_id === id || c.b_id === id;
+      } else if (c.constraint === EConstraint.Coincident) {
+        ok = c.a_id === id || c.b_id === id;
+      } else if (c.constraint === EConstraint.PointOnCircle) {
+        ok = c.c_id === id || c.p_id === id;
+      } else if (c.constraint === EConstraint.PointOnLine) {
+        ok = c.l_id === id || c.p_id === id;
+      } else if (c.constraint === EConstraint.Radius) {
+        ok = c.c_id === id;
+      }
+
+      if (ok) result.push(c);
+    }
+
+    return result;
   },
 
   _updateCoincidentAllows: () => {
@@ -259,17 +298,15 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
   _explainSelectedParams: () => {
     const params: TEditorStore["paramsOfSelectedGeo"] = {};
 
-    const { getSelectedGeos, getGeo } = get();
+    const { getSelectedGeos, getGeoOf } = get();
     const geos = getSelectedGeos();
 
     if (geos.length === 1) {
       const [geo] = geos;
 
       if (geo.geo === EGeo.Segment) {
-        const a = getGeo(geo.a_id);
-        const b = getGeo(geo.b_id);
-
-        if (a.geo !== EGeo.Point || b.geo !== EGeo.Point) return;
+        const a = getGeoOf(EGeo.Point, geo.a_id);
+        const b = getGeoOf(EGeo.Point, geo.b_id);
 
         params.length = Math.sqrt((a.x[0] - b.x[0]) ** 2 + (a.y[0] - b.y[0]) ** 2);
       } else if (geo.geo === EGeo.Circle) {

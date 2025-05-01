@@ -1,6 +1,5 @@
-import { TollBar, ToolBarButton } from "@/components/toolbar";
+import { ToolBar, ToolBarButton } from "@/components/toolbar";
 import useEditorStore from "./editorStore";
-import { Logo } from "./Logo";
 import CoincidentIcon from "@/icons/CoincidentIcon";
 import PointOnLineIcon from "@/icons/PointOnLineIcon";
 import PointOnCircleIcon from "@/icons/PointOnLineCircle";
@@ -27,8 +26,7 @@ export default function SketchToolBar() {
   };
 
   return (
-    <TollBar>
-      <Logo />
+    <ToolBar>
       <ToolBarButton aria-disabled={!allowCoincident} title="Coincident [X]" onClick={handleCoincidentClick}>
         <CoincidentIcon />
       </ToolBarButton>
@@ -38,6 +36,6 @@ export default function SketchToolBar() {
       <ToolBarButton aria-disabled={!allowPointOnCircle} title="Point on circle [Q]" onClick={handlePointOnCircleClick}>
         <PointOnCircleIcon />
       </ToolBarButton>
-    </TollBar>
+    </ToolBar>
   );
 }

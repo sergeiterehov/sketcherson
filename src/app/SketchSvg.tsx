@@ -4,7 +4,7 @@ import { EGeo } from "./types";
 const oxColor = "#F008";
 const oyColor = "#0F08";
 
-const selectedColor = "#08F";
+const selectedColor = "#F00";
 
 const curveColor = "#999";
 const curveWidth = 1;

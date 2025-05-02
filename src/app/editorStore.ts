@@ -1,10 +1,11 @@
 import { create } from "zustand";
-import { SketchSolver } from "./solver";
-import { EConstraint, EGeo, TConstraint, TGeo, TID, TSketch } from "./types";
-import { makeCoincident, makeDistance, makePointOnCircle, makePointOnLine, makeRadius } from "./utils";
+import { SketchSolver } from "@/core/solver";
+import { EConstraint, EGeo, TConstraint, TGeo, TID, TSketch } from "@/core/types";
+import { makeCoincident, makeDistance, makePointOnCircle, makePointOnLine, makeRadius } from "@/core/utils";
 
 type TEditorStore = {
   scale: number;
+  translate: { dx: number; dy: number };
 
   selectedGeoIds: TID[];
 
@@ -53,6 +54,7 @@ type TEditorStore = {
 
 const useEditorStore = create<TEditorStore>((set, get) => ({
   scale: 1,
+  translate: { dx: 0, dy: 0 },
 
   selectedGeoIds: [],
 

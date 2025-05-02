@@ -10,7 +10,6 @@ export enum EGeo {
 }
 
 export enum EConstraint {
-  Equals = "equals",
   Distance = "distance",
   Perpendicular = "perpendicular",
   Coincident = "coincident",
@@ -18,6 +17,8 @@ export enum EConstraint {
   Radius = "radius",
   PointOnCircle = "point_on_circle",
   PointOnLine = "point_on_line",
+  Vertical = "vertical",
+  Horizontal = "horizontal",
 }
 
 export type TSomeGeo<E extends EGeo, T extends object> = TIdentified<{ geo: E } & T>;
@@ -48,14 +49,6 @@ export type TGeoCircle = TSomeGeo<
 >;
 
 export type TGeo = TGeoPoint | TGeoSegment | TGeoCircle;
-
-export type TConstraintEquals = TSomeConstraint<
-  EConstraint.Equals,
-  {
-    a_id: TID;
-    b_id: TID;
-  }
->;
 
 export type TConstraintDistance = TSomeConstraint<
   EConstraint.Distance,
@@ -115,15 +108,32 @@ export type TConstraintPointOnLine = TSomeConstraint<
   }
 >;
 
+export type TConstraintVertical = TSomeConstraint<
+  EConstraint.Vertical,
+  {
+    a_id: TID;
+    b_id: TID;
+  }
+>;
+
+export type TConstraintHorizontal = TSomeConstraint<
+  EConstraint.Horizontal,
+  {
+    a_id: TID;
+    b_id: TID;
+  }
+>;
+
 export type TConstraint =
-  | TConstraintEquals
   | TConstraintDistance
   | TConstraintPerpendicular
   | TConstraintCoincident
   | TConstraintFix
   | TConstraintRadius
   | TConstraintPointOnCircle
-  | TConstraintPointOnLine;
+  | TConstraintPointOnLine
+  | TConstraintVertical
+  | TConstraintHorizontal;
 
 export type TSketch = {
   geos: TGeo[];

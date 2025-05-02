@@ -12,6 +12,8 @@ import {
   TParam,
   TConstraintPointOnCircle,
   TConstraintPointOnLine,
+  TConstraintVertical,
+  TConstraintHorizontal,
 } from "./types";
 
 const ERROR_TOLERANCE = 1e-5;
@@ -19,14 +21,14 @@ const ERROR_TOLERANCE = 1e-5;
 export class SketchSolver {
   private geoMap = new Map<number, TGeo>();
 
-  private _getGeo<ES extends EGeo[]>(id: number, ...types: ES): TGeo & { geo: ES[number] } {
+  private _getGeo<E extends EGeo>(id: number, type: E): TGeo & { geo: E } {
     const geo = this.geoMap.get(id);
 
     if (!geo) throw new Error("E_REF");
 
-    if (types.length && !types.includes(geo.geo)) throw new Error("E_GEO_TYPE");
+    if (geo.geo !== type) throw new Error("E_GEO_TYPE");
 
-    return geo;
+    return geo as TGeo & { geo: E };
   }
 
   constructor(public readonly sketch: TSketch) {
@@ -162,39 +164,60 @@ export class SketchSolver {
 
   private _grubConstraintGeoParams(constraint: TConstraint): TParam[] {
     switch (constraint.constraint) {
-      case EConstraint.Fix:
+      case EConstraint.Fix: {
         const p = this._getGeo(constraint.p_id, EGeo.Point);
+
         return [p.x, p.y];
-      case EConstraint.Distance:
+      }
+      case EConstraint.Distance: {
         const a = this._getGeo(constraint.a_id, EGeo.Point);
         const b = this._getGeo(constraint.b_id, EGeo.Point);
+
         return [a.x, a.y, b.x, b.y];
-      case EConstraint.Perpendicular:
+      }
+      case EConstraint.Perpendicular: {
         const A = this._getGeo(constraint.a_id, EGeo.Segment);
         const B = this._getGeo(constraint.b_id, EGeo.Segment);
         const a1 = this._getGeo(A.a_id, EGeo.Point);
         const a2 = this._getGeo(A.b_id, EGeo.Point);
         const b1 = this._getGeo(B.a_id, EGeo.Point);
         const b2 = this._getGeo(B.b_id, EGeo.Point);
+
         return [a1.x, a1.y, a2.x, a2.y, b1.x, b1.y, b2.x, b2.y];
-      case EConstraint.Coincident:
-        const pa = this._getGeo(constraint.a_id, EGeo.Point);
-        const pb = this._getGeo(constraint.b_id, EGeo.Point);
-        return [pa.x, pa.y, pb.x, pb.y];
-      case EConstraint.Radius:
+      }
+      case EConstraint.Coincident: {
+        const a = this._getGeo(constraint.a_id, EGeo.Point);
+        const b = this._getGeo(constraint.b_id, EGeo.Point);
+
+        return [a.x, a.y, b.x, b.y];
+      }
+      case EConstraint.Radius: {
+        const c = this._getGeo(constraint.c_id, EGeo.Circle);
+
+        return [c.r];
+      }
+      case EConstraint.PointOnCircle: {
         const circle = this._getGeo(constraint.c_id, EGeo.Circle);
-        return [circle.r];
-      case EConstraint.PointOnCircle:
-        const circle2 = this._getGeo(constraint.c_id, EGeo.Circle);
-        const center = this._getGeo(circle2.c_id, EGeo.Point);
-        const point = this._getGeo(constraint.p_id, EGeo.Point);
-        return [circle2.r, center.x, center.y, point.x, point.y];
-      case EConstraint.PointOnLine:
-        const point2 = this._getGeo(constraint.p_id, EGeo.Point);
+        const c = this._getGeo(circle.c_id, EGeo.Point);
+        const p = this._getGeo(constraint.p_id, EGeo.Point);
+
+        return [circle.r, c.x, c.y, p.x, p.y];
+      }
+      case EConstraint.PointOnLine: {
+        const p = this._getGeo(constraint.p_id, EGeo.Point);
         const line = this._getGeo(constraint.l_id, EGeo.Segment);
-        const la = this._getGeo(line.a_id, EGeo.Point);
-        const lb = this._getGeo(line.b_id, EGeo.Point);
-        return [point2.x, point2.y, la.x, la.y, lb.x, lb.y];
+        const a = this._getGeo(line.a_id, EGeo.Point);
+        const b = this._getGeo(line.b_id, EGeo.Point);
+
+        return [p.x, p.y, a.x, a.y, b.x, b.y];
+      }
+      case EConstraint.Horizontal:
+      case EConstraint.Vertical: {
+        const a = this._getGeo(constraint.a_id, EGeo.Point);
+        const b = this._getGeo(constraint.b_id, EGeo.Point);
+
+        return [a.x, a.y, b.x, b.y];
+      }
       default:
         throw new Error("E_UNSUPPORTED_CONSTRAINT");
     }
@@ -216,6 +239,10 @@ export class SketchSolver {
         return this._errorPointOnCircle(constraint);
       case EConstraint.PointOnLine:
         return this._errorPointOnLine(constraint);
+      case EConstraint.Vertical:
+        return this._errorVertical(constraint);
+      case EConstraint.Horizontal:
+        return this._errorHorizontal(constraint);
       default:
         return 0;
     }
@@ -237,6 +264,10 @@ export class SketchSolver {
         return this._gradPointOnCircle(constraint, params);
       case EConstraint.PointOnLine:
         return this._gradPointOnLine(constraint, params);
+      case EConstraint.Vertical:
+        return this._gradVertical(constraint, params);
+      case EConstraint.Horizontal:
+        return this._gradHorizontal(constraint, params);
       default:
         return;
     }
@@ -264,6 +295,36 @@ export class SketchSolver {
 
     params.get(p.x)![0] += +dx;
     params.get(p.y)![0] += +dy;
+  }
+
+  private _errorCoincident(constraint: TConstraintCoincident): number {
+    const a = this._getGeo(constraint.a_id, EGeo.Point);
+    const b = this._getGeo(constraint.b_id, EGeo.Point);
+
+    const dx = a.x[0] - b.x[0];
+    const dy = a.y[0] - b.y[0];
+
+    const err = dx * dx + dy * dy;
+
+    return err;
+  }
+
+  private _gradCoincident(constraint: TConstraintCoincident, params: Map<TParam, TParam>) {
+    const a = this._getGeo(constraint.a_id, EGeo.Point);
+    const b = this._getGeo(constraint.b_id, EGeo.Point);
+
+    const ax = a.x[0];
+    const ay = a.y[0];
+    const bx = b.x[0];
+    const by = b.y[0];
+
+    const dx = 2 * (ax - bx);
+    const dy = 2 * (ay - by);
+
+    params.get(a.x)![0] += +dx;
+    params.get(a.y)![0] += +dy;
+    params.get(b.x)![0] += -dx;
+    params.get(b.y)![0] += -dy;
   }
 
   private _errorDistance(constraint: TConstraintDistance): number {
@@ -339,36 +400,6 @@ export class SketchSolver {
     params.get(C.y)![0] += -dy1 * dErr;
     params.get(D.x)![0] += +dx1 * dErr;
     params.get(D.y)![0] += +dy1 * dErr;
-  }
-
-  private _errorCoincident(constraint: TConstraintCoincident): number {
-    const a = this._getGeo(constraint.a_id, EGeo.Point);
-    const b = this._getGeo(constraint.b_id, EGeo.Point);
-
-    const dx = a.x[0] - b.x[0];
-    const dy = a.y[0] - b.y[0];
-
-    const err = dx * dx + dy * dy;
-
-    return err;
-  }
-
-  private _gradCoincident(constraint: TConstraintCoincident, params: Map<TParam, TParam>) {
-    const a = this._getGeo(constraint.a_id, EGeo.Point);
-    const b = this._getGeo(constraint.b_id, EGeo.Point);
-
-    const ax = a.x[0];
-    const ay = a.y[0];
-    const bx = b.x[0];
-    const by = b.y[0];
-
-    const dx = 2 * (ax - bx);
-    const dy = 2 * (ay - by);
-
-    params.get(a.x)![0] += +dx;
-    params.get(a.y)![0] += +dy;
-    params.get(b.x)![0] += -dx;
-    params.get(b.y)![0] += -dy;
   }
 
   private _errorRadius(constraint: TConstraintRadius): number {
@@ -471,5 +502,53 @@ export class SketchSolver {
     params.get(a.y)![0] += -(px - dx) * dErr;
     params.get(b.x)![0] += -py * dErr;
     params.get(b.y)![0] += +px * dErr;
+  }
+
+  private _errorVertical(constraint: TConstraintVertical): number {
+    const a = this._getGeo(constraint.a_id, EGeo.Point);
+    const b = this._getGeo(constraint.b_id, EGeo.Point);
+
+    const dx = a.x[0] - b.x[0];
+
+    const err = dx * dx;
+
+    return err;
+  }
+
+  private _gradVertical(constraint: TConstraintVertical, params: Map<TParam, TParam>) {
+    const a = this._getGeo(constraint.a_id, EGeo.Point);
+    const b = this._getGeo(constraint.b_id, EGeo.Point);
+
+    const ax = a.x[0];
+    const bx = b.x[0];
+
+    const dx = 2 * (ax - bx);
+
+    params.get(a.x)![0] += +dx;
+    params.get(b.x)![0] += -dx;
+  }
+
+  private _errorHorizontal(constraint: TConstraintHorizontal): number {
+    const a = this._getGeo(constraint.a_id, EGeo.Point);
+    const b = this._getGeo(constraint.b_id, EGeo.Point);
+
+    const dy = a.y[0] - b.y[0];
+
+    const err = dy * dy;
+
+    return err;
+  }
+
+  private _gradHorizontal(constraint: TConstraintHorizontal, params: Map<TParam, TParam>) {
+    const a = this._getGeo(constraint.a_id, EGeo.Point);
+    const b = this._getGeo(constraint.b_id, EGeo.Point);
+
+    const ay = a.y[0];
+    const by = b.y[0];
+
+    const dy = 2 * (ay - by);
+
+    params.get(a.y)![0] += +dy;
+    params.get(b.y)![0] += -dy;
   }
 }

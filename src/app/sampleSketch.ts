@@ -1,38 +1,28 @@
 import {
-  getPoint,
   makeCircle3,
-  makeCoincident,
   makeDistance,
   makeFix,
+  makePerpendicular,
   makePoint,
-  makePointOnCircle,
-  makePointOnLine,
   makeRadius,
   makeRect4,
   makeSegment4,
   makeSketch,
-} from "./utils";
+} from "@/core/utils";
 
 export const sampleSketch = makeSketch();
 
 const zeroPoint = makePoint(sampleSketch, 0, 0);
 makeFix(sampleSketch, zeroPoint);
 
-const rect = makeRect4(sampleSketch, 10, 10, 80, 120);
-
-// makeCoincident(sampleSketch, zeroPoint, getPoint(sampleSketch, rect[0].a_id));
-
+makeRect4(sampleSketch, 10, 10, 80, 120);
 const c1 = makeCircle3(sampleSketch, -200, 200, 20);
 makeRadius(sampleSketch, c1[0], 40);
-// makeCoincident(sampleSketch, c1[1], getPoint(sampleSketch, rect[1].b_id));
-
-const p1 = makePoint(sampleSketch, 100, -100);
-// makePointOnCircle(sampleSketch, p1, c1[0]);
-
-const s = makeSegment4(sampleSketch, 10, 200, 100, 250);
-// makeDistance(sampleSketch, s[1], s[2], 150);
-// makeCoincident(sampleSketch, p1, s[1]);
-// makePointOnLine(sampleSketch, getPoint(sampleSketch, rect[0].b_id), s[0]);
-
-const c2 = makeCircle3(sampleSketch, -200, -200, 10);
-// makeCoincident(sampleSketch, c2[1], s[2]); // Без доп ограничения попадает в локальный минимум
+makePoint(sampleSketch, 100, -100);
+const s1 = makeSegment4(sampleSketch, 10, 200, 100, 250);
+const s2 = makeSegment4(sampleSketch, 10, -200, 100, -290);
+const s3 = makeSegment4(sampleSketch, 0, -100, 50, -150);
+makeDistance(sampleSketch, s1[1], s1[2], 150);
+makePerpendicular(sampleSketch, s1[0], s2[0]);
+makePerpendicular(sampleSketch, s1[0], s3[0]);
+makeCircle3(sampleSketch, -200, -200, 10);

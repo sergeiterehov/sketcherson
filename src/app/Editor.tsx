@@ -4,9 +4,10 @@ import { useKey, useMeasure } from "react-use";
 import { sampleSketch } from "./sampleSketch";
 import useEditorStore from "./editorStore";
 import SketchToolBar from "./SketchToolBar";
-import SketchSvg from "./SketchSvg";
+import Renderer from "./render/Renderer";
 import styled from "@emotion/styled";
 import { FloatingToolBarContainer } from "@/components/toolbar";
+import ViewportContext from "./render/ViewportContext";
 
 const EditorContainer = styled.div({
   display: "flex",
@@ -14,17 +15,21 @@ const EditorContainer = styled.div({
   height: "100vh",
 });
 
-const SketchContainer = styled.div({
+const SketchViewport = styled.div({
   display: "flex",
   flexGrow: 1,
   overflow: "hidden",
 });
 
-function SketchSizeObserver(props: { children(width: number, height: number): React.ReactNode }) {
+function ViewportSizeObserver(props: { children: React.ReactNode }) {
   const { children } = props;
-  const [ref, { width, height }] = useMeasure<HTMLDivElement>();
+  const [ref, size] = useMeasure<HTMLDivElement>();
 
-  return <SketchContainer ref={ref}>{children(width, height)}</SketchContainer>;
+  return (
+    <SketchViewport ref={ref}>
+      <ViewportContext.Provider value={size}>{children}</ViewportContext.Provider>
+    </SketchViewport>
+  );
 }
 
 export default function Editor() {
@@ -48,7 +53,9 @@ export default function Editor() {
 
   return (
     <EditorContainer>
-      <SketchSizeObserver>{(width, height) => <SketchSvg width={width} height={height} />}</SketchSizeObserver>
+      <ViewportSizeObserver>
+        <Renderer />
+      </ViewportSizeObserver>
       <FloatingToolBarContainer>
         <SketchToolBar />
       </FloatingToolBarContainer>

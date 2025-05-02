@@ -4,10 +4,12 @@ import {
   TConstraintCoincident,
   TConstraintDistance,
   TConstraintFix,
+  TConstraintHorizontal,
   TConstraintPerpendicular,
   TConstraintPointOnCircle,
   TConstraintPointOnLine,
   TConstraintRadius,
+  TConstraintVertical,
   TGeoCircle,
   TGeoPoint,
   TGeoSegment,
@@ -124,6 +126,32 @@ export const makePointOnLine = (sketch: TSketch, p: TGeoPoint, l: TGeoSegment): 
   return con;
 };
 
+export const makeHorizontal = (sketch: TSketch, a: TGeoPoint, b: TGeoPoint): TConstraintHorizontal => {
+  const con: TConstraintHorizontal = {
+    id: makeId(),
+    constraint: EConstraint.Horizontal,
+    a_id: a.id,
+    b_id: b.id,
+  };
+
+  sketch.constraints.push(con);
+
+  return con;
+};
+
+export const makeVertical = (sketch: TSketch, a: TGeoPoint, b: TGeoPoint): TConstraintVertical => {
+  const con: TConstraintVertical = {
+    id: makeId(),
+    constraint: EConstraint.Vertical,
+    a_id: a.id,
+    b_id: b.id,
+  };
+
+  sketch.constraints.push(con);
+
+  return con;
+};
+
 export const makePoint = (sketch: TSketch, x: number, y: number): TGeoPoint => {
   const p: TGeoPoint = {
     id: makeId(),
@@ -195,24 +223,26 @@ export const makeRect4 = (
   ay: number,
   bx: number,
   by: number
-): [TGeoSegment, TGeoSegment, TGeoSegment, TGeoSegment] => {
-  const la = makeSegment4(sketch, ax, ay, bx, ay);
-  const lb = makeSegment4(sketch, bx, ay, bx, by);
-  const lc = makeSegment4(sketch, bx, by, ax, by);
-  const ld = makeSegment4(sketch, ax, by, ax, ay);
+): [
+  [TGeoSegment, TGeoPoint, TGeoPoint],
+  [TGeoSegment, TGeoPoint, TGeoPoint],
+  [TGeoSegment, TGeoPoint, TGeoPoint],
+  [TGeoSegment, TGeoPoint, TGeoPoint]
+] => {
+  const lh_a = makeSegment4(sketch, ax, ay, bx, ay);
+  const lv_a = makeSegment4(sketch, bx, ay, bx, by);
+  const lh_b = makeSegment4(sketch, bx, by, ax, by);
+  const lv_b = makeSegment4(sketch, ax, by, ax, ay);
 
-  makeDistance(sketch, la[1], la[2], Math.abs(bx - ax));
-  makeDistance(sketch, lb[1], lb[2], Math.abs(by - ay));
-  makeDistance(sketch, lc[1], lc[2], Math.abs(bx - ax));
-  makeDistance(sketch, ld[1], ld[2], Math.abs(by - ay));
+  makeCoincident(sketch, lh_a[1], lv_b[2]);
+  makeCoincident(sketch, lh_a[2], lv_a[1]);
+  makeCoincident(sketch, lv_a[2], lh_b[1]);
+  makeCoincident(sketch, lh_b[2], lv_b[1]);
 
-  makePerpendicular(sketch, la[0], lb[0]);
-  makePerpendicular(sketch, lb[0], lc[0]);
+  makeVertical(sketch, lv_a[1], lv_a[2]);
+  makeVertical(sketch, lv_b[1], lv_b[2]);
+  makeHorizontal(sketch, lh_a[1], lh_a[2]);
+  makeHorizontal(sketch, lh_b[1], lh_b[2]);
 
-  makeCoincident(sketch, la[1], ld[2]);
-  makeCoincident(sketch, la[2], lb[1]);
-  makeCoincident(sketch, lb[2], lc[1]);
-  makeCoincident(sketch, lc[2], ld[1]);
-
-  return [la[0], lb[0], lc[0], ld[0]];
+  return [lh_a, lv_a, lh_b, lv_b];
 };

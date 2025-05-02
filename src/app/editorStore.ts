@@ -32,6 +32,8 @@ type TEditorStore = {
   reset(): void;
 
   setScale(scale: number): void;
+  mulScale(k: number): void;
+  moveTranslate(dx: number, dy: number): void;
 
   resetGeoSelection(): void;
   toggleGeoSelection(id: TID): void;
@@ -85,8 +87,18 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     set({ sketch: undefined, _solver: undefined, _geoMap: new Map() });
   },
 
-  setScale: (scale: number) => {
+  setScale: (scale) => {
     set({ scale });
+  },
+
+  mulScale: (k) => {
+    set((prev) => ({ scale: prev.scale * k }));
+  },
+
+  moveTranslate: (dx, dy) => {
+    set((prev) => ({
+      translate: { dx: prev.translate.dx + dx, dy: prev.translate.dy + dy },
+    }));
   },
 
   resetGeoSelection: () => {

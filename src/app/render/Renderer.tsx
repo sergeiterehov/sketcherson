@@ -1,4 +1,4 @@
-import { Fragment, use } from "react";
+import { Fragment, use, useEffect, useRef } from "react";
 import { EConstraint, EGeo } from "@/core/types";
 import useEditorStore from "../editorStore";
 import ViewportContext from "./ViewportContext";
@@ -9,9 +9,13 @@ import AxisLayer from "./AxisLayer";
 export default function Renderer() {
   const theme = useTheme();
 
+  const svgRef = useRef<SVGSVGElement>(null);
+
   const { width, height } = use(ViewportContext);
   const scale = useEditorStore((s) => s.scale);
   const translate = useEditorStore((s) => s.translate);
+  const mulScale = useEditorStore((s) => s.mulScale);
+  const moveTranslate = useEditorStore((s) => s.moveTranslate);
 
   const sketch = useEditorStore((s) => s.sketch);
   const stat = useEditorStore((s) => s.solvingStats);
@@ -29,10 +33,42 @@ export default function Renderer() {
     toggleGeoSelection(id);
   };
 
+  useEffect(() => {
+    const svg = svgRef.current;
+
+    if (!svg) return;
+
+    const controller = new AbortController();
+
+    svg.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Проверяем, что это жест масштабирования (обычно с нажатым Ctrl или на трекпаде Mac)
+        if (e.ctrlKey || e.metaKey || (e.deltaMode === 0 && Math.abs(e.deltaY) < 1)) {
+          // Коэффициент масштабирования (эмпирически подобранный)
+          const intensity = 0.01;
+          const delta = -e.deltaY;
+          const scale = 1 + delta * intensity;
+
+          mulScale(scale);
+        } else {
+          // Если не масштабирование, то панорамирование
+          moveTranslate(-e.deltaX, -e.deltaY);
+        }
+      },
+      { passive: false, signal: controller.signal }
+    );
+
+    return () => controller.abort();
+  }, [moveTranslate, mulScale, !svgRef.current]);
+
   if (!sketch) return "NO_SKETCH";
 
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ userSelect: "none" }}>
+    <svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ userSelect: "none" }}>
       <g transform={`translate(${width / 2 + translate.dx}, ${height / 2 + translate.dy})`}>
         <AxisLayer />
         <ConstraintsLayer />

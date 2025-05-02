@@ -243,19 +243,22 @@ function ConstraintsLayer() {
 
           const r = circle.r[0];
 
+          const pcx = (c.x[0] + Math.cos(angle) * r) * scale;
+          const pcy = (c.y[0] + Math.sin(angle) * r) * scale;
+
           return (
             <Fragment key={con.id}>
               <line
                 x1={c.x[0] * scale}
                 y1={c.y[0] * scale}
-                x2={(c.x[0] + Math.cos(angle) * r) * scale}
-                y2={(c.y[0] + Math.sin(angle) * r) * scale}
+                x2={pcx}
+                y2={pcy}
                 stroke={theme.constraintColor}
                 strokeWidth={theme.lineWidth}
               />
               <text
-                x={c.x[0] * scale + Math.cos(angle) * (r + dist)}
-                y={c.y[0] * scale + Math.sin(angle) * (r + dist)}
+                x={pcx + Math.cos(angle) * dist}
+                y={pcy + Math.sin(angle) * dist}
                 fontFamily="monospace"
                 fontSize={10}
                 fill={theme.constraintColor}

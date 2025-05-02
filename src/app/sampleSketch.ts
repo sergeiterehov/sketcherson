@@ -29,8 +29,8 @@ makeRadius(sampleSketch, c1[0], 40);
 const p1 = makePoint(sampleSketch, 100, -100);
 // makePointOnCircle(sampleSketch, p1, c1[0]);
 
-const s = makeSegment4(sampleSketch, 0, 100, 100, 100);
-makeDistance(sampleSketch, s[1], s[2], 150);
+const s = makeSegment4(sampleSketch, 10, 200, 100, 250);
+// makeDistance(sampleSketch, s[1], s[2], 150);
 // makeCoincident(sampleSketch, p1, s[1]);
 // makePointOnLine(sampleSketch, getPoint(sampleSketch, rect[0].b_id), s[0]);
 

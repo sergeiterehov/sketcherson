@@ -32,13 +32,13 @@ export default function Editor() {
   const init = useEditorStore((s) => s.init);
   const reset = useEditorStore((s) => s.reset);
   const createCoincident = useEditorStore((s) => s.createCoincident);
-  const createPointOnLine = useEditorStore((s) => s.createPointOnLine);
-  const createPointOnCircle = useEditorStore((s) => s.createPointOnCircle);
+  const createRadius = useEditorStore((s) => s.createRadius);
+  const createDistance = useEditorStore((s) => s.createDistance);
 
   useKey("Escape", resetGeoSelection);
   useKey("x", createCoincident);
-  useKey("l", createPointOnLine);
-  useKey("q", createPointOnCircle);
+  useKey("r", createRadius);
+  useKey("d", createDistance);
 
   useEffect(() => {
     init(JSON.parse(JSON.stringify(sampleSketch)));

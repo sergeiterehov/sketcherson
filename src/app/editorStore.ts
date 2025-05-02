@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { SketchSolver } from "./solver";
 import { EConstraint, EGeo, TConstraint, TGeo, TID, TSketch } from "./types";
-import { makeCoincident, makePointOnCircle, makePointOnLine, makeRadius } from "./utils";
+import { makeCoincident, makeDistance, makePointOnCircle, makePointOnLine, makeRadius } from "./utils";
 
 type TEditorStore = {
   scale: number;
@@ -19,11 +19,6 @@ type TEditorStore = {
     lambda: number;
     i: number;
   };
-
-  allowCoincident: boolean;
-  allowPointOnLine: boolean;
-  allowPointOnCircle: boolean;
-  allowRadius: boolean;
 
   paramsOfSelectedGeo: {
     radius?: number;
@@ -45,11 +40,9 @@ type TEditorStore = {
   getGeoOf<G extends EGeo>(type: G, id: TID): TGeo & { geo: G };
   getGeoConstraints(id: TID): TConstraint[];
 
-  _updateCoincidentAllows(): void;
   createCoincident(): void;
-  createPointOnLine(): void;
-  createPointOnCircle(): void;
-  createRadius(r: number): void;
+  createRadius(): void;
+  createDistance(): void;
 
   _explainSelectedParams(): void;
 
@@ -96,7 +89,6 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
   resetGeoSelection: () => {
     set({ selectedGeoIds: [] });
-    get()._updateCoincidentAllows();
     get()._explainSelectedParams();
   },
 
@@ -108,7 +100,6 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
       return { selectedGeoIds: [...prev, id] };
     });
-    get()._updateCoincidentAllows();
     get()._explainSelectedParams();
   },
 
@@ -169,73 +160,14 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
         ok = c.l_id === id || c.p_id === id;
       } else if (c.constraint === EConstraint.Radius) {
         ok = c.c_id === id;
+      } else if (c.constraint === EConstraint.Distance) {
+        ok = c.a_id === id || c.b_id === id;
       }
 
       if (ok) result.push(c);
     }
 
     return result;
-  },
-
-  _updateCoincidentAllows: () => {
-    const selectedGeos = get().getSelectedGeos();
-
-    set({
-      allowCoincident: (() => {
-        if (selectedGeos.length < 2) return false;
-
-        return selectedGeos.every((g) => g.geo === EGeo.Point);
-      })(),
-      allowPointOnLine: (() => {
-        if (selectedGeos.length < 2) return false;
-
-        let lines = 0;
-        let points = 0;
-
-        for (const geo of selectedGeos) {
-          if (geo.geo === EGeo.Segment) {
-            lines += 1;
-          } else if (geo.geo === EGeo.Point) {
-            points += 1;
-          }
-
-          if (lines > 1) return false;
-        }
-
-        if (!lines || !points) return false;
-
-        return true;
-      })(),
-      allowPointOnCircle: (() => {
-        if (selectedGeos.length < 2) return false;
-
-        let circles = 0;
-        let points = 0;
-
-        for (const geo of selectedGeos) {
-          if (geo.geo === EGeo.Circle) {
-            circles += 1;
-          } else if (geo.geo === EGeo.Point) {
-            points += 1;
-          }
-
-          if (circles > 1) return false;
-        }
-
-        if (!circles || !points) return false;
-
-        return true;
-      })(),
-      allowRadius: (() => {
-        for (const geo of selectedGeos) {
-          if (geo.geo === EGeo.Circle) {
-            return true;
-          }
-        }
-
-        return false;
-      })(),
-    });
   },
 
   createCoincident: () => {
@@ -247,77 +179,71 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
     if (selectedGeos.length < 2) return;
 
-    const [target, ...sources] = selectedGeos;
+    const point = selectedGeos.find((g) => g.geo === EGeo.Point);
 
-    if (target.geo !== EGeo.Point) return;
+    if (!point) return;
 
-    for (const source of sources) {
-      if (source.geo !== EGeo.Point) continue;
+    const restGeos = selectedGeos.filter((g) => g !== point);
 
-      makeCoincident(sketch, target, source);
+    for (const geo of restGeos) {
+      if (geo.geo === EGeo.Point) {
+        makeCoincident(sketch, point, geo);
+      } else if (geo.geo === EGeo.Segment) {
+        makePointOnLine(sketch, point, geo);
+      } else if (geo.geo === EGeo.Circle) {
+        makePointOnCircle(sketch, point, geo);
+      }
     }
 
     resetGeoSelection();
     _solve();
   },
 
-  createPointOnLine: () => {
+  createRadius: () => {
     const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
 
     if (!sketch) return;
 
-    const selectedGeos = getSelectedGeos();
+    const selectedCircles = getSelectedGeos().filter((g) => g.geo === EGeo.Circle);
 
-    if (selectedGeos.length < 2) return;
+    if (!selectedCircles.length) return;
 
-    const line = selectedGeos.find((g) => g.geo === EGeo.Segment);
+    const input = Number(prompt("Radius"));
 
-    if (!line) return;
+    if (Number.isNaN(input)) return;
 
-    for (const geo of selectedGeos) {
-      if (geo.geo !== EGeo.Point) continue;
+    if (input <= 0) return;
 
-      makePointOnLine(sketch, geo, line);
-    }
+    const r = input;
 
-    resetGeoSelection();
-    _solve();
-  },
-
-  createPointOnCircle: () => {
-    const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
-
-    if (!sketch) return;
-
-    const selectedGeos = getSelectedGeos();
-
-    if (selectedGeos.length < 2) return;
-
-    const circle = selectedGeos.find((g) => g.geo === EGeo.Circle);
-
-    if (!circle) return;
-
-    for (const geo of selectedGeos) {
-      if (geo.geo !== EGeo.Point) continue;
-
-      makePointOnCircle(sketch, geo, circle);
-    }
-
-    resetGeoSelection();
-    _solve();
-  },
-
-  createRadius: (r) => {
-    const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
-
-    if (!sketch) return;
-
-    const selectedGeos = getSelectedGeos();
-
-    for (const geo of selectedGeos) {
-      if (geo.geo !== EGeo.Circle) continue;
-
+    for (const geo of selectedCircles) {
+      // TODO: вводить радиус первой окружности, остальные приравнивать к ней
       makeRadius(sketch, geo, r);
+    }
+
+    resetGeoSelection();
+    _solve();
+  },
+
+  createDistance: () => {
+    const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
+
+    if (!sketch) return;
+
+    const selectedPoints = getSelectedGeos().filter((g) => g.geo === EGeo.Point);
+
+    if (selectedPoints.length < 2) return;
+
+    const [origin, ...rest] = selectedPoints;
+
+    const dist = Number(prompt("Distance"));
+
+    if (Number.isNaN(dist)) return;
+
+    if (dist <= 0) return;
+
+    for (const point of rest) {
+      makeDistance(sketch, origin, point, dist);
     }
 
     resetGeoSelection();

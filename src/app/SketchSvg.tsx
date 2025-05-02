@@ -7,13 +7,13 @@ const oyColor = "#0F08";
 
 const selectedColor = "#F00";
 
-const curveColor = "#999";
+const lineColor = "#777";
 const lineWidth = 1;
 
 const pointColor = "#444";
 const pointRadius = 2;
 
-const constraintColor = "#A00";
+const constraintColor = "#D77";
 
 function stringifyConstraints(constraints: TConstraint[]): string {
   const perpendiculars: TConstraintPerpendicular[] = [];
@@ -94,7 +94,7 @@ export default function SketchSvg(props: { width: number; height: number }) {
                   x2={b.x[0] * scale}
                   y2={b.y[0] * scale}
                   strokeWidth={lineWidth}
-                  stroke={selectedGeoIds.includes(geo.id) ? selectedColor : curveColor}
+                  stroke={selectedGeoIds.includes(geo.id) ? selectedColor : lineColor}
                   data-geo-id={geo.id}
                   onClick={handleGeoClick}
                 />
@@ -120,7 +120,7 @@ export default function SketchSvg(props: { width: number; height: number }) {
                   cy={c.y[0] * scale}
                   r={geo.r[0] * scale}
                   strokeWidth={lineWidth}
-                  stroke={selectedGeoIds.includes(geo.id) ? selectedColor : curveColor}
+                  stroke={selectedGeoIds.includes(geo.id) ? selectedColor : lineColor}
                   fill="none"
                   data-geo-id={geo.id}
                   onClick={handleGeoClick}
@@ -163,13 +163,13 @@ export default function SketchSvg(props: { width: number; height: number }) {
                           strokeWidth={lineWidth}
                         />
                         <text
-                          x={(c.x[0] + Math.cos(angle) * dist) * scale}
-                          y={(c.y[0] + Math.sin(angle) * dist) * scale}
+                          x={c.x[0] * scale + Math.cos(angle) * dist}
+                          y={c.y[0] * scale + Math.sin(angle) * dist}
                           fontFamily="monospace"
                           fontSize={10}
                           fill={constraintColor}
                         >
-                          R={con.r}
+                          R={con.r.toLocaleString()}
                         </text>
                       </Fragment>
                     );
@@ -212,6 +212,61 @@ export default function SketchSvg(props: { width: number; height: number }) {
                 data-geo-id={geo.id}
                 onClick={handleGeoClick}
               />
+            );
+          })}
+        {sketch.constraints
+          .filter((c) => c.constraint === EConstraint.Distance)
+          .map((c) => {
+            const a = getGeoOf(EGeo.Point, c.a_id);
+            const b = getGeoOf(EGeo.Point, c.b_id);
+
+            const ax = a.x[0];
+            const ay = a.y[0];
+            const bx = b.x[0];
+            const by = b.y[0];
+
+            const dx = bx - ax;
+            const dy = by - ay;
+
+            const angle = (Math.atan2(dy, dx) / Math.PI) * 180;
+            const l = Math.sqrt(dx * dx + dy * dy);
+
+            const nx = dx / l;
+            const ny = dy / l;
+
+            const d = 16;
+            const dt = 4;
+            const dl = 24;
+
+            const cx = ax + (bx - ax) / 2;
+            const cy = ay + (by - ay) / 2;
+
+            return (
+              <Fragment key={c.id}>
+                <path
+                  d={[
+                    `M ${ax * scale} ${ay * scale}`,
+                    `L ${ax * scale + ny * dl}, ${ay * scale - nx * dl}`,
+                    `M ${ax * scale + ny * d}, ${ay * scale - nx * d}`,
+                    `L ${bx * scale + ny * d}, ${by * scale - nx * d}`,
+                    `M ${bx * scale + ny * dl}, ${by * scale - nx * dl}`,
+                    `L ${bx * scale} ${by * scale}`,
+                  ].join(" ")}
+                  stroke={constraintColor}
+                  strokeWidth={lineWidth}
+                />
+                <text
+                  transform={[
+                    `translate(${cx * scale + ny * (d + dt)} ${cy * scale - nx * (d + dt)})`,
+                    `rotate(${angle})`,
+                  ].join(" ")}
+                  fontFamily="monospace"
+                  fontSize={10}
+                  fill={constraintColor}
+                >
+                  {c.d.toLocaleString()}
+                </text>
+              </Fragment>
             );
           })}
       </g>

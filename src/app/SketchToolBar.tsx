@@ -16,10 +16,12 @@ export default function SketchToolBar() {
   const allowCoincident = useEditorStore((s) => s.allowCoincident);
   const allowPointOnLine = useEditorStore((s) => s.allowPointOnLine);
   const allowPointOnCircle = useEditorStore((s) => s.allowPointOnCircle);
+  const allowRadius = useEditorStore((s) => s.allowRadius);
 
   const createCoincident = useEditorStore((s) => s.createCoincident);
   const createPointOnLine = useEditorStore((s) => s.createPointOnLine);
   const createPointOnCircle = useEditorStore((s) => s.createPointOnCircle);
+  const createRadius = useEditorStore((s) => s.createRadius);
 
   const handleCoincidentClick = () => {
     createCoincident();
@@ -31,6 +33,16 @@ export default function SketchToolBar() {
 
   const handlePointOnCircleClick = () => {
     createPointOnCircle();
+  };
+
+  const handleRadiusClick = () => {
+    const r = Number(prompt("Radius"));
+
+    if (Number.isNaN(r)) return;
+
+    if (r <= 0) return;
+
+    createRadius(r);
   };
 
   return (
@@ -65,7 +77,7 @@ export default function SketchToolBar() {
       <ToolBarButton>
         <TangentIcon />
       </ToolBarButton>
-      <ToolBarButton>
+      <ToolBarButton aria-disabled={!allowRadius} title="Radius [R]" onClick={handleRadiusClick}>
         <RadiusIcon />
       </ToolBarButton>
     </ToolBar>

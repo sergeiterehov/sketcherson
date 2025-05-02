@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 import useEditorStore from "./editorStore";
-import { EConstraint, EGeo, TConstraint } from "./types";
+import { EConstraint, EGeo, TConstraint, TConstraintPerpendicular } from "./types";
 
 const oxColor = "#F008";
 const oyColor = "#0F08";
@@ -8,7 +8,7 @@ const oyColor = "#0F08";
 const selectedColor = "#F00";
 
 const curveColor = "#999";
-const curveWidth = 1;
+const lineWidth = 1;
 
 const pointColor = "#444";
 const pointRadius = 2;
@@ -16,7 +16,7 @@ const pointRadius = 2;
 const constraintColor = "#A00";
 
 function stringifyConstraints(constraints: TConstraint[]): string {
-  const perpendiculars: (TConstraint & { constraint: EConstraint.Perpendicular })[] = [];
+  const perpendiculars: TConstraintPerpendicular[] = [];
 
   for (const c of constraints) {
     if (c.constraint === EConstraint.Perpendicular) {
@@ -72,8 +72,8 @@ export default function SketchSvg(props: { width: number; height: number }) {
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ userSelect: "none" }}>
       <g transform={`translate(${width / 2},${height / 2})`}>
         {/* basis layer */}
-        <line x1={-width} y1={0} x2={width} y2={0} strokeWidth={curveWidth} stroke={oxColor} />
-        <line x1={0} y1={-height} x2={0} y2={height} strokeWidth={curveWidth} stroke={oyColor} />
+        <line x1={-width} y1={0} x2={width} y2={0} strokeWidth={lineWidth} stroke={oxColor} />
+        <line x1={0} y1={-height} x2={0} y2={height} strokeWidth={lineWidth} stroke={oyColor} />
         {/* curves layer */}
         {sketch.geos
           .filter((g) => g.geo === EGeo.Segment)
@@ -93,7 +93,7 @@ export default function SketchSvg(props: { width: number; height: number }) {
                   y1={a.y[0] * scale}
                   x2={b.x[0] * scale}
                   y2={b.y[0] * scale}
-                  strokeWidth={curveWidth}
+                  strokeWidth={lineWidth}
                   stroke={selectedGeoIds.includes(geo.id) ? selectedColor : curveColor}
                   data-geo-id={geo.id}
                   onClick={handleGeoClick}
@@ -119,7 +119,7 @@ export default function SketchSvg(props: { width: number; height: number }) {
                   cx={c.x[0] * scale}
                   cy={c.y[0] * scale}
                   r={geo.r[0] * scale}
-                  strokeWidth={curveWidth}
+                  strokeWidth={lineWidth}
                   stroke={selectedGeoIds.includes(geo.id) ? selectedColor : curveColor}
                   fill="none"
                   data-geo-id={geo.id}
@@ -144,6 +144,34 @@ export default function SketchSvg(props: { width: number; height: number }) {
                       >
                         Q
                       </text>
+                    );
+                  })}
+                {constraints
+                  .filter((c) => c.constraint === EConstraint.Radius)
+                  .map((con) => {
+                    const angle = (45 / 180) * Math.PI;
+                    const dist = con.r + 12;
+
+                    return (
+                      <Fragment key={con.id}>
+                        <line
+                          x1={c.x[0] * scale}
+                          y1={c.y[0] * scale}
+                          x2={(c.x[0] + Math.cos(angle) * con.r) * scale}
+                          y2={(c.y[0] + Math.sin(angle) * con.r) * scale}
+                          stroke={constraintColor}
+                          strokeWidth={lineWidth}
+                        />
+                        <text
+                          x={(c.x[0] + Math.cos(angle) * dist) * scale}
+                          y={(c.y[0] + Math.sin(angle) * dist) * scale}
+                          fontFamily="monospace"
+                          fontSize={10}
+                          fill={constraintColor}
+                        >
+                          R={con.r}
+                        </text>
+                      </Fragment>
                     );
                   })}
                 <GeoConstraintsText x={con_x * scale} y={con_y * scale} constraints={constraints} />

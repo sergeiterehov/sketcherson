@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { SketchSolver } from "./solver";
 import { EConstraint, EGeo, TConstraint, TGeo, TID, TSketch } from "./types";
-import { makeCoincident, makePointOnCircle, makePointOnLine } from "./utils";
+import { makeCoincident, makePointOnCircle, makePointOnLine, makeRadius } from "./utils";
 
 type TEditorStore = {
   scale: number;
@@ -23,6 +23,7 @@ type TEditorStore = {
   allowCoincident: boolean;
   allowPointOnLine: boolean;
   allowPointOnCircle: boolean;
+  allowRadius: boolean;
 
   paramsOfSelectedGeo: {
     radius?: number;
@@ -48,6 +49,7 @@ type TEditorStore = {
   createCoincident(): void;
   createPointOnLine(): void;
   createPointOnCircle(): void;
+  createRadius(r: number): void;
 
   _explainSelectedParams(): void;
 
@@ -69,6 +71,7 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
   allowCoincident: false,
   allowPointOnLine: false,
   allowPointOnCircle: false,
+  allowRadius: false,
 
   paramsOfSelectedGeo: {},
 
@@ -223,6 +226,15 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
         return true;
       })(),
+      allowRadius: (() => {
+        for (const geo of selectedGeos) {
+          if (geo.geo === EGeo.Circle) {
+            return true;
+          }
+        }
+
+        return false;
+      })(),
     });
   },
 
@@ -289,6 +301,23 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
       if (geo.geo !== EGeo.Point) continue;
 
       makePointOnCircle(sketch, geo, circle);
+    }
+
+    resetGeoSelection();
+    _solve();
+  },
+
+  createRadius: (r) => {
+    const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
+
+    if (!sketch) return;
+
+    const selectedGeos = getSelectedGeos();
+
+    for (const geo of selectedGeos) {
+      if (geo.geo !== EGeo.Circle) continue;
+
+      makeRadius(sketch, geo, r);
     }
 
     resetGeoSelection();

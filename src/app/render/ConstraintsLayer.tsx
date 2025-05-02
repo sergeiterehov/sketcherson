@@ -14,6 +14,8 @@ const markerChars: { [K in EConstraint]?: string } = {
   [EConstraint.Perpendicular]: "T",
 };
 
+const alwaysWithNumber = new Set([EConstraint.Perpendicular]);
+
 function clusterLabels(labels: TLabel[], threshold: number): TLabelCluster[] {
   const clusters: TLabelCluster[] = [];
 
@@ -278,7 +280,11 @@ function ConstraintsLayer() {
 
             if (!char) return null;
 
-            return `${char}${labels.length > 1 ? labels.map((l) => l.con.id).join(",") : ""}`;
+            return `${char}${
+              labels.length > 1 || alwaysWithNumber.has(type as EConstraint)
+                ? labels.map((l) => l.con.id).join(",")
+                : ""
+            }`;
           })
           .join("\n");
 

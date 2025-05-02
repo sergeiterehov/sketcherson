@@ -34,7 +34,7 @@ export default function SketchToolBar() {
       <ToolBarButton title="Coincident [X]" onClick={handleCoincidentClick}>
         <AnyCoincidentIcon />
       </ToolBarButton>
-      <ToolBarButton title="Distance [D]" onClick={handleDistanceClick}>
+      <ToolBarButton title="Distance or length [D]" onClick={handleDistanceClick}>
         <DistanceIcon />
       </ToolBarButton>
       <ToolBarButton>

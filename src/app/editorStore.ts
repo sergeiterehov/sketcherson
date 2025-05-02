@@ -226,24 +226,43 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
   },
 
   createDistance: () => {
-    const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
+    const { sketch, getSelectedGeos, resetGeoSelection, _solve, getGeoOf } = get();
 
     if (!sketch) return;
 
-    const selectedPoints = getSelectedGeos().filter((g) => g.geo === EGeo.Point);
+    const selectedGeos = getSelectedGeos();
 
-    if (selectedPoints.length < 2) return;
+    if (!selectedGeos.length) return;
 
-    const [origin, ...rest] = selectedPoints;
+    const [a, b] = selectedGeos;
 
-    const dist = Number(prompt("Distance"));
+    const ask = (name: string): number | undefined => {
+      const value = Number(prompt(name));
 
-    if (Number.isNaN(dist)) return;
+      if (Number.isNaN(value)) return;
 
-    if (dist <= 0) return;
+      if (value <= 0) return;
 
-    for (const point of rest) {
-      makeDistance(sketch, origin, point, dist);
+      return value;
+    };
+
+    if (a.geo === EGeo.Point && b.geo === EGeo.Point) {
+      const d = ask("Distance");
+
+      if (d === undefined) return;
+
+      makeDistance(sketch, a, b, d);
+    } else if (a.geo === EGeo.Segment) {
+      const pa = getGeoOf(EGeo.Point, a.a_id);
+      const pb = getGeoOf(EGeo.Point, a.b_id);
+
+      const d = ask("Length");
+
+      if (d === undefined) return;
+
+      makeDistance(sketch, pa, pb, d);
+    } else {
+      return;
     }
 
     resetGeoSelection();

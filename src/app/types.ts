@@ -5,7 +5,6 @@ export type TIdentified<T extends object> = { id: TID } & T;
 
 export enum EGeo {
   Point = "point",
-  Line = "line",
   Segment = "segment",
   Circle = "circle",
 }
@@ -32,14 +31,6 @@ export type TGeoPoint = TSomeGeo<
   }
 >;
 
-export type TGeoLine = TSomeGeo<
-  EGeo.Line,
-  {
-    k: TParam;
-    b: TParam;
-  }
->;
-
 export type TGeoSegment = TSomeGeo<
   EGeo.Segment,
   {
@@ -56,7 +47,7 @@ export type TGeoCircle = TSomeGeo<
   }
 >;
 
-export type TGeo = TGeoPoint | TGeoLine | TGeoSegment | TGeoCircle;
+export type TGeo = TGeoPoint | TGeoSegment | TGeoCircle;
 
 export type TConstraintEquals = TSomeConstraint<
   EConstraint.Equals,

@@ -10,6 +10,7 @@ type TThemeStore = {
     constraintColor: string;
     lineWidth: number;
     pointRadius: number;
+    hitColor: string;
   };
 };
 
@@ -23,6 +24,7 @@ const useThemeStore = create<TThemeStore>(() => ({
     constraintColor: "#D77",
     lineWidth: 1,
     pointRadius: 2,
+    hitColor: "#00F0",
   },
 }));
 

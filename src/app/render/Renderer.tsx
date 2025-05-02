@@ -6,6 +6,9 @@ import ConstraintsLayer from "./ConstraintsLayer";
 import useTheme from "../utils/useTheme";
 import AxisLayer from "./AxisLayer";
 
+const interactiveStrokeWidth = 8;
+const interactivePointRadius = 5;
+
 export default function Renderer() {
   const theme = useTheme();
 
@@ -111,6 +114,14 @@ export default function Renderer() {
                   y2={b.y[0] * scale}
                   strokeWidth={theme.lineWidth}
                   stroke={selectedGeoIds.includes(geo.id) ? theme.selectedColor : theme.lineColor}
+                />
+                <line
+                  x1={a.x[0] * scale}
+                  y1={a.y[0] * scale}
+                  x2={b.x[0] * scale}
+                  y2={b.y[0] * scale}
+                  strokeWidth={interactiveStrokeWidth}
+                  stroke={theme.hitColor}
                   data-geo-id={geo.id}
                   onClick={handleGeoClick}
                 />
@@ -126,12 +137,19 @@ export default function Renderer() {
             return (
               <Fragment key={geo.id}>
                 <circle
-                  key={geo.id}
                   cx={c.x[0] * scale}
                   cy={c.y[0] * scale}
                   r={geo.r[0] * scale}
                   strokeWidth={theme.lineWidth}
                   stroke={selectedGeoIds.includes(geo.id) ? theme.selectedColor : theme.lineColor}
+                  fill="none"
+                />
+                <circle
+                  cx={c.x[0] * scale}
+                  cy={c.y[0] * scale}
+                  r={geo.r[0] * scale}
+                  strokeWidth={interactiveStrokeWidth}
+                  stroke={theme.hitColor}
                   fill="none"
                   data-geo-id={geo.id}
                   onClick={handleGeoClick}
@@ -164,15 +182,17 @@ export default function Renderer() {
             const y = geo.y[0];
 
             return (
-              <circle
-                key={geo.id}
-                cx={x * scale}
-                cy={y * scale}
-                r={theme.pointRadius}
-                fill={color}
-                data-geo-id={geo.id}
-                onClick={handleGeoClick}
-              />
+              <Fragment key={geo.id}>
+                <circle cx={x * scale} cy={y * scale} r={theme.pointRadius} fill={color} />
+                <circle
+                  cx={x * scale}
+                  cy={y * scale}
+                  r={interactivePointRadius}
+                  fill={theme.hitColor}
+                  data-geo-id={geo.id}
+                  onClick={handleGeoClick}
+                />
+              </Fragment>
             );
           })}
       </g>

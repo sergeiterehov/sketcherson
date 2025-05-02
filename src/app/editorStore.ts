@@ -6,6 +6,7 @@ import { makeCoincident, makeDistance, makePointOnCircle, makePointOnLine, makeR
 type TEditorStore = {
   scale: number;
   translate: { dx: number; dy: number };
+  pointer: { x: number; y: number };
 
   selectedGeoIds: TID[];
 
@@ -32,8 +33,8 @@ type TEditorStore = {
   reset(): void;
 
   setScale(scale: number): void;
-  mulScale(k: number): void;
   moveTranslate(dx: number, dy: number): void;
+  setPointer(x: number, y: number): void;
 
   resetGeoSelection(): void;
   toggleGeoSelection(id: TID): void;
@@ -57,6 +58,7 @@ type TEditorStore = {
 const useEditorStore = create<TEditorStore>((set, get) => ({
   scale: 1,
   translate: { dx: 0, dy: 0 },
+  pointer: { x: 0, y: 0 },
 
   selectedGeoIds: [],
 
@@ -91,14 +93,14 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     set({ scale });
   },
 
-  mulScale: (k) => {
-    set((prev) => ({ scale: prev.scale * k }));
-  },
-
   moveTranslate: (dx, dy) => {
     set((prev) => ({
       translate: { dx: prev.translate.dx + dx, dy: prev.translate.dy + dy },
     }));
+  },
+
+  setPointer: (x, y) => {
+    set({ pointer: { x, y } });
   },
 
   resetGeoSelection: () => {

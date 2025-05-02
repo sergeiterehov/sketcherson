@@ -14,8 +14,7 @@ export default function Renderer() {
   const { width, height } = use(ViewportContext);
   const scale = useEditorStore((s) => s.scale);
   const translate = useEditorStore((s) => s.translate);
-  const mulScale = useEditorStore((s) => s.mulScale);
-  const moveTranslate = useEditorStore((s) => s.moveTranslate);
+  const pointer = useEditorStore((s) => s.pointer);
 
   const sketch = useEditorStore((s) => s.sketch);
   const stat = useEditorStore((s) => s.solvingStats);
@@ -42,34 +41,58 @@ export default function Renderer() {
 
     svg.addEventListener(
       "wheel",
-      (e) => {
+      (e: WheelEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
+        const { setScale, moveTranslate, scale } = useEditorStore.getState();
 
         // Проверяем, что это жест масштабирования (обычно с нажатым Ctrl или на трекпаде Mac)
         if (e.ctrlKey || e.metaKey || (e.deltaMode === 0 && Math.abs(e.deltaY) < 1)) {
           // Коэффициент масштабирования (эмпирически подобранный)
           const intensity = 0.01;
           const delta = -e.deltaY;
-          const scale = 1 + delta * intensity;
+          const scaleFactor = 1 + delta * intensity;
+          const newScale = scale * scaleFactor;
 
-          mulScale(scale);
+          const box = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
+
+          const sx = e.clientX - box.x - svg.clientWidth / 2;
+          const sy = e.clientY - box.y - svg.clientHeight / 2;
+
+          setScale(newScale);
+          moveTranslate(sx / newScale - sx / scale, sy / newScale - sy / scale);
         } else {
           // Если не масштабирование, то панорамирование
-          moveTranslate(-e.deltaX, -e.deltaY);
+          moveTranslate(-e.deltaX / scale, -e.deltaY / scale);
         }
       },
       { passive: false, signal: controller.signal }
     );
 
+    svg.addEventListener(
+      "mousemove",
+      (e: MouseEvent) => {
+        const { scale, translate, setPointer } = useEditorStore.getState();
+
+        const box = (e.currentTarget as SVGSVGElement).getBoundingClientRect();
+
+        const x = (e.clientX - box.x - svg.clientWidth / 2) / scale - translate.dx;
+        const y = (e.clientY - box.y - svg.clientHeight / 2) / scale - translate.dy;
+
+        setPointer(x, y);
+      },
+      { signal: controller.signal }
+    );
+
     return () => controller.abort();
-  }, [moveTranslate, mulScale, !svgRef.current]);
+  }, [!svgRef.current]);
 
   if (!sketch) return "NO_SKETCH";
 
   return (
     <svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ userSelect: "none" }}>
-      <g transform={`translate(${width / 2 + translate.dx}, ${height / 2 + translate.dy})`}>
+      <g transform={`translate(${width / 2 + translate.dx * scale}, ${height / 2 + translate.dy * scale})`}>
         <AxisLayer />
         <ConstraintsLayer />
         {/* Segments */}
@@ -160,6 +183,9 @@ export default function Renderer() {
             i={stat.i.toLocaleString()}
           </tspan>
           <tspan dx="24px">e={stat.error.toLocaleString()}</tspan>
+          <tspan x="0" dy="1.2em">
+            Position: ({pointer.x.toLocaleString()}, {pointer.y.toLocaleString()})
+          </tspan>
           <tspan x="0" dy="1.2em">
             Selection: {selectedGeoIds.join(", ") || "-"}
           </tspan>

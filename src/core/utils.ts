@@ -152,6 +152,26 @@ export const makeVertical = (sketch: TSketch, a: TGeoPoint, b: TGeoPoint): TCons
   return con;
 };
 
+export const makeHorizontalOrVertical = (
+  sketch: TSketch,
+  a: TGeoPoint,
+  b: TGeoPoint
+): TConstraintHorizontal | TConstraintVertical => {
+  const dx = Math.abs(a.x[0] - b.x[0]);
+  const dy = Math.abs(a.y[0] - b.y[0]);
+
+  const con: TConstraintHorizontal | TConstraintVertical = {
+    id: makeId(),
+    constraint: dx > dy ? EConstraint.Horizontal : EConstraint.Vertical,
+    a_id: a.id,
+    b_id: b.id,
+  };
+
+  sketch.constraints.push(con);
+
+  return con;
+};
+
 export const makePoint = (sketch: TSketch, x: number, y: number): TGeoPoint => {
   const p: TGeoPoint = {
     id: makeId(),

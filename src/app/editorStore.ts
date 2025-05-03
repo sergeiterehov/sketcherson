@@ -1,7 +1,14 @@
 import { create } from "zustand";
 import { SketchSolver } from "@/core/solver";
 import { EConstraint, EGeo, TConstraint, TGeo, TID, TSketch } from "@/core/types";
-import { makeCoincident, makeDistance, makePointOnCircle, makePointOnLine, makeRadius } from "@/core/utils";
+import {
+  makeCoincident,
+  makeDistance,
+  makeHorizontalOrVertical,
+  makePointOnCircle,
+  makePointOnLine,
+  makeRadius,
+} from "@/core/utils";
 
 type TEditorStore = {
   scale: number;
@@ -49,6 +56,7 @@ type TEditorStore = {
   createCoincident(): void;
   createRadius(): void;
   createDistance(): void;
+  createAlign(): void;
 
   _explainSelectedParams(): void;
 
@@ -285,6 +293,37 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
       makeDistance(sketch, pa, pb, d);
     } else {
       return;
+    }
+
+    resetGeoSelection();
+    _solve();
+  },
+
+  createAlign: () => {
+    const { sketch, getSelectedGeos, resetGeoSelection, _solve, getGeoOf } = get();
+
+    if (!sketch) return;
+
+    const selectedGeos = getSelectedGeos();
+
+    if (!selectedGeos.length) return;
+
+    const points = selectedGeos.filter((g) => g.geo === EGeo.Point);
+    const segments = selectedGeos.filter((g) => g.geo === EGeo.Segment);
+
+    if (points.length >= 1) {
+      const [a, ...rest] = points;
+
+      for (const b of rest) {
+        makeHorizontalOrVertical(sketch, a, b);
+      }
+    }
+
+    for (const segment of segments) {
+      const a = getGeoOf(EGeo.Point, segment.a_id);
+      const b = getGeoOf(EGeo.Point, segment.b_id);
+
+      makeHorizontalOrVertical(sketch, a, b);
     }
 
     resetGeoSelection();

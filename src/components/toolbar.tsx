@@ -1,5 +1,12 @@
 import styled from "@emotion/styled";
 
+export const ToolBarSeparator = styled.div({
+  width: 1,
+  backgroundColor: "#DDD",
+  flexShrink: 0,
+  height: "100%",
+});
+
 export const ToolBarButton = styled.div({
   pointerEvents: "none",
   userSelect: "none",
@@ -24,6 +31,14 @@ export const ToolBarButton = styled.div({
   },
 });
 
+export const ToolBarGroup = styled.div({
+  display: "flex",
+  gap: 8,
+  alignItems: "center",
+  paddingTop: 8,
+  paddingBottom: 8,
+});
+
 export const ToolBar = styled.div({
   display: "flex",
   gap: 8,
@@ -31,7 +46,8 @@ export const ToolBar = styled.div({
   backgroundColor: "#FFF",
   boxShadow: "0 2px 6px #0002, 0 0 1px #0002",
   borderRadius: 12,
-  padding: 8,
+  paddingLeft: 8,
+  paddingRight: 8,
 });
 
 export const FloatingToolBarContainer = styled.div({

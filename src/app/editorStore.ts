@@ -385,7 +385,7 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
     const frameTime = 16;
 
-    const solving = solver.solve({ rollbackOnError: false, iterationsLimit: 10_000_000, logDivider: 1 });
+    const solving = solver.solve({ rollbackOnError: false, iterationsLimit: 10_000_000, logDivider: 20_000 });
 
     let prevStepAt = 0;
     let animRequest = 0;

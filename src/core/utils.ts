@@ -1,6 +1,7 @@
 import {
   EConstraint,
   EGeo,
+  TConstraintAngle,
   TConstraintCoincident,
   TConstraintDistance,
   TConstraintFix,
@@ -179,6 +180,20 @@ export const makeHorizontalOrVertical = (
     constraint: dx > dy ? EConstraint.Horizontal : EConstraint.Vertical,
     a_id: a.id,
     b_id: b.id,
+  };
+
+  sketch.constraints.push(con);
+
+  return con;
+};
+
+export const makeAngle = (sketch: TSketch, a: TGeoSegment, b: TGeoSegment, angle: number): TConstraintAngle => {
+  const con: TConstraintAngle = {
+    id: makeId(),
+    constraint: EConstraint.Angle,
+    a_id: a.id,
+    b_id: b.id,
+    a: angle,
   };
 
   sketch.constraints.push(con);

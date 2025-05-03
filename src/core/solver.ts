@@ -15,6 +15,7 @@ import {
   TConstraintVertical,
   TConstraintHorizontal,
   TConstraintParallel,
+  TConstraintAngle,
 } from "./types";
 
 const ERROR_TOLERANCE = 1e-5;
@@ -177,6 +178,7 @@ export class SketchSolver {
         return [a.x, a.y, b.x, b.y];
       }
       case EConstraint.Parallel:
+      case EConstraint.Angle:
       case EConstraint.Perpendicular: {
         const A = this._getGeo(constraint.a_id, EGeo.Segment);
         const B = this._getGeo(constraint.b_id, EGeo.Segment);
@@ -247,6 +249,8 @@ export class SketchSolver {
         return this._errorVertical(constraint);
       case EConstraint.Horizontal:
         return this._errorHorizontal(constraint);
+      case EConstraint.Angle:
+        return this._errorAngle(constraint);
       default:
         return 0;
     }
@@ -274,6 +278,8 @@ export class SketchSolver {
         return this._gradVertical(constraint, params);
       case EConstraint.Horizontal:
         return this._gradHorizontal(constraint, params);
+      case EConstraint.Angle:
+        return this._gradAngle(constraint, params);
       default:
         return;
     }
@@ -383,29 +389,29 @@ export class SketchSolver {
   }
 
   private _gradPerpendicular(constraint: TConstraintPerpendicular, params: Map<TParam, TParam>) {
-    const a = this._getGeo(constraint.a_id, EGeo.Segment);
-    const b = this._getGeo(constraint.b_id, EGeo.Segment);
+    const AB = this._getGeo(constraint.a_id, EGeo.Segment);
+    const CD = this._getGeo(constraint.b_id, EGeo.Segment);
 
-    const A = this._getGeo(a.a_id, EGeo.Point);
-    const B = this._getGeo(a.b_id, EGeo.Point);
-    const C = this._getGeo(b.a_id, EGeo.Point);
-    const D = this._getGeo(b.b_id, EGeo.Point);
+    const a = this._getGeo(AB.a_id, EGeo.Point);
+    const b = this._getGeo(AB.b_id, EGeo.Point);
+    const c = this._getGeo(CD.a_id, EGeo.Point);
+    const d = this._getGeo(CD.b_id, EGeo.Point);
 
-    const dx1 = B.x[0] - A.x[0];
-    const dy1 = B.y[0] - A.y[0];
-    const dx2 = D.x[0] - C.x[0];
-    const dy2 = D.y[0] - C.y[0];
+    const dx1 = b.x[0] - a.x[0];
+    const dy1 = b.y[0] - a.y[0];
+    const dx2 = d.x[0] - c.x[0];
+    const dy2 = d.y[0] - c.y[0];
 
     const dErr = 2 * (dx1 * dx2 + dy1 * dy2);
 
-    params.get(A.x)![0] += -dx2 * dErr;
-    params.get(A.y)![0] += -dy2 * dErr;
-    params.get(B.x)![0] += +dx2 * dErr;
-    params.get(B.y)![0] += +dy2 * dErr;
-    params.get(C.x)![0] += -dx1 * dErr;
-    params.get(C.y)![0] += -dy1 * dErr;
-    params.get(D.x)![0] += +dx1 * dErr;
-    params.get(D.y)![0] += +dy1 * dErr;
+    params.get(a.x)![0] += -dx2 * dErr;
+    params.get(a.y)![0] += -dy2 * dErr;
+    params.get(b.x)![0] += +dx2 * dErr;
+    params.get(b.y)![0] += +dy2 * dErr;
+    params.get(c.x)![0] += -dx1 * dErr;
+    params.get(c.y)![0] += -dy1 * dErr;
+    params.get(d.x)![0] += +dx1 * dErr;
+    params.get(d.y)![0] += +dy1 * dErr;
   }
 
   private _errorParallel(constraint: TConstraintParallel): number {
@@ -428,29 +434,29 @@ export class SketchSolver {
   }
 
   private _gradParallel(constraint: TConstraintParallel, params: Map<TParam, TParam>) {
-    const a = this._getGeo(constraint.a_id, EGeo.Segment);
-    const b = this._getGeo(constraint.b_id, EGeo.Segment);
+    const AB = this._getGeo(constraint.a_id, EGeo.Segment);
+    const CD = this._getGeo(constraint.b_id, EGeo.Segment);
 
-    const A = this._getGeo(a.a_id, EGeo.Point);
-    const B = this._getGeo(a.b_id, EGeo.Point);
-    const C = this._getGeo(b.a_id, EGeo.Point);
-    const D = this._getGeo(b.b_id, EGeo.Point);
+    const a = this._getGeo(AB.a_id, EGeo.Point);
+    const b = this._getGeo(AB.b_id, EGeo.Point);
+    const c = this._getGeo(CD.a_id, EGeo.Point);
+    const d = this._getGeo(CD.b_id, EGeo.Point);
 
-    const dx1 = B.x[0] - A.x[0];
-    const dy1 = B.y[0] - A.y[0];
-    const dx2 = D.x[0] - C.x[0];
-    const dy2 = D.y[0] - C.y[0];
+    const dx1 = b.x[0] - a.x[0];
+    const dy1 = b.y[0] - a.y[0];
+    const dx2 = d.x[0] - c.x[0];
+    const dy2 = d.y[0] - c.y[0];
 
     const dErr = 2 * (dx1 * dy2 - dy1 * dx2);
 
-    params.get(A.x)![0] += -dy2 * dErr;
-    params.get(A.y)![0] += +dx2 * dErr;
-    params.get(B.x)![0] += +dy2 * dErr;
-    params.get(B.y)![0] += -dx2 * dErr;
-    params.get(C.x)![0] += +dy1 * dErr;
-    params.get(C.y)![0] += -dx1 * dErr;
-    params.get(D.x)![0] += -dy1 * dErr;
-    params.get(D.y)![0] += +dx1 * dErr;
+    params.get(a.x)![0] += -dy2 * dErr;
+    params.get(a.y)![0] += +dx2 * dErr;
+    params.get(b.x)![0] += +dy2 * dErr;
+    params.get(b.y)![0] += -dx2 * dErr;
+    params.get(c.x)![0] += +dy1 * dErr;
+    params.get(c.y)![0] += -dx1 * dErr;
+    params.get(d.x)![0] += -dy1 * dErr;
+    params.get(d.y)![0] += +dx1 * dErr;
   }
 
   private _errorRadius(constraint: TConstraintRadius): number {
@@ -601,5 +607,68 @@ export class SketchSolver {
 
     params.get(a.y)![0] += +dy;
     params.get(b.y)![0] += -dy;
+  }
+
+  private _errorAngle(constraint: TConstraintAngle): number {
+    const AB = this._getGeo(constraint.a_id, EGeo.Segment);
+    const CD = this._getGeo(constraint.b_id, EGeo.Segment);
+
+    const a = this._getGeo(AB.a_id, EGeo.Point);
+    const b = this._getGeo(AB.b_id, EGeo.Point);
+    const c = this._getGeo(CD.a_id, EGeo.Point);
+    const d = this._getGeo(CD.b_id, EGeo.Point);
+
+    const dx1 = b.x[0] - a.x[0];
+    const dy1 = b.y[0] - a.y[0];
+    const dx2 = d.x[0] - c.x[0];
+    const dy2 = d.y[0] - c.y[0];
+
+    const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+    const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+    const cosTheta = (dx1 * dx2 + dy1 * dy2) / (len1 * len2);
+
+    // TODO: ошибка в пределах ±1, что очень мало на фоне остальных.
+    // Из за маленькой ошибки большая погрешность!
+
+    const err = (cosTheta - Math.cos(constraint.a * (Math.PI / 180))) ** 2;
+
+    return err;
+  }
+
+  private _gradAngle(constraint: TConstraintAngle, params: Map<TParam, TParam>) {
+    const AB = this._getGeo(constraint.a_id, EGeo.Segment);
+    const CD = this._getGeo(constraint.b_id, EGeo.Segment);
+
+    const a = this._getGeo(AB.a_id, EGeo.Point);
+    const b = this._getGeo(AB.b_id, EGeo.Point);
+    const c = this._getGeo(CD.a_id, EGeo.Point);
+    const d = this._getGeo(CD.b_id, EGeo.Point);
+
+    const dx1 = b.x[0] - a.x[0];
+    const dy1 = b.y[0] - a.y[0];
+    const dx2 = d.x[0] - c.x[0];
+    const dy2 = d.y[0] - c.y[0];
+
+    const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+    const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+    const D_val = len1 * len2;
+    const cosTheta = (dx1 * dx2 + dy1 * dy2) / D_val;
+    const S = cosTheta - Math.cos(constraint.a * (Math.PI / 180));
+
+    const commonFactor = (2 * S) / (D_val * D_val);
+
+    const len1_2 = len1 * len1;
+    const len2_2 = len2 * len2;
+
+    params.get(a.x)![0] += +commonFactor * (dy1 * dy2 * dx1 - dx2 * len1_2);
+    params.get(a.y)![0] += +commonFactor * (dx1 * dx2 * dy1 - dy2 * len1_2);
+    params.get(b.x)![0] += -commonFactor * (dy1 * dy2 * dx1 - dx2 * len1_2);
+    params.get(b.y)![0] += -commonFactor * (dx1 * dx2 * dy1 - dy2 * len1_2);
+    params.get(c.x)![0] += +commonFactor * (dy1 * dy2 * dx2 - dx1 * len2_2);
+    params.get(c.y)![0] += +commonFactor * (dx1 * dx2 * dy2 - dy1 * len2_2);
+    params.get(d.x)![0] += -commonFactor * (dy1 * dy2 * dx2 - dx1 * len2_2);
+    params.get(d.y)![0] += -commonFactor * (dx1 * dx2 * dy2 - dy1 * len2_2);
   }
 }

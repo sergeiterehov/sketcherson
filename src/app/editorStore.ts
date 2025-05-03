@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { SketchSolver } from "@/core/solver";
 import { EGeo, TGeo, TID, TSketch } from "@/core/types";
 import {
+  makeAngle,
   makeCoincident,
   makeDistance,
   makeHorizontalOrVertical,
@@ -60,6 +61,7 @@ type TEditorStore = {
   createAlign(): void;
   createPerpendicular(): void;
   createParallel(): void;
+  createAngle(): void;
 
   _explainSelectedParams(): void;
 
@@ -331,6 +333,29 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     const [a, b] = segments;
 
     makeParallel(sketch, a, b);
+
+    resetGeoSelection();
+    _solve();
+  },
+
+  createAngle: () => {
+    const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
+
+    if (!sketch) return;
+
+    const segments = getSelectedGeos().filter((g) => g.geo === EGeo.Segment);
+
+    if (segments.length !== 2) return;
+
+    const value = Number(prompt("Angle"));
+
+    if (Number.isNaN(value)) return;
+
+    if (value <= 0) return;
+
+    const [a, b] = segments;
+
+    makeAngle(sketch, a, b, value);
 
     resetGeoSelection();
     _solve();

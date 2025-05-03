@@ -24,6 +24,7 @@ type TThemeStore = {
     align: string;
     perpendicular: string;
     parallel: string;
+    angle: string;
   };
 };
 
@@ -48,7 +49,8 @@ const useThemeStore = create<TThemeStore>(() => ({
     coincident: "x",
     radius: "r",
     distance: "d",
-    align: "a",
+    angle: "a",
+    align: "t",
     perpendicular: "l",
     parallel: "i",
   },

@@ -11,7 +11,7 @@ function AxisLayer() {
   const scaledHalfLength = (length / 2) * scale;
 
   return (
-    <g>
+    <g data-layer="axis">
       <line
         x1={-scaledHalfLength}
         y1={0}

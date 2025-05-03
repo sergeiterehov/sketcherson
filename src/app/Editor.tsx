@@ -45,6 +45,7 @@ export default function Editor() {
   const createAlign = useEditorStore((s) => s.createAlign);
   const createPerpendicular = useEditorStore((s) => s.createPerpendicular);
   const createParallel = useEditorStore((s) => s.createParallel);
+  const createAngle = useEditorStore((s) => s.createAngle);
 
   useKey(shortcuts.cancel, resetGeoSelection);
   useKey(shortcuts.coincident, createCoincident);
@@ -53,6 +54,7 @@ export default function Editor() {
   useKey(shortcuts.align, createAlign);
   useKey(shortcuts.perpendicular, createPerpendicular);
   useKey(shortcuts.parallel, createParallel);
+  useKey(shortcuts.angle, createAngle);
 
   useEffect(() => {
     init(JSON.parse(JSON.stringify(sampleSketch)));

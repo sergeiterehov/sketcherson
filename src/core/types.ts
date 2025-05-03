@@ -20,6 +20,7 @@ export enum EConstraint {
   PointOnLine = "point_on_line",
   Vertical = "vertical",
   Horizontal = "horizontal",
+  Angle = "angle",
 }
 
 export type TSomeGeo<E extends EGeo, T extends object> = TIdentified<{ geo: E } & T>;
@@ -133,6 +134,15 @@ export type TConstraintHorizontal = TSomeConstraint<
   }
 >;
 
+export type TConstraintAngle = TSomeConstraint<
+  EConstraint.Angle,
+  {
+    a_id: TID;
+    b_id: TID;
+    a: number;
+  }
+>;
+
 export type TConstraint =
   | TConstraintDistance
   | TConstraintPerpendicular
@@ -143,7 +153,8 @@ export type TConstraint =
   | TConstraintPointOnCircle
   | TConstraintPointOnLine
   | TConstraintVertical
-  | TConstraintHorizontal;
+  | TConstraintHorizontal
+  | TConstraintAngle;
 
 export type TSketch = {
   geos: TGeo[];

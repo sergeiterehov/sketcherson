@@ -121,117 +121,122 @@ export default function Renderer() {
 
   return (
     <svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ userSelect: "none" }}>
-      <g transform={`translate(${width / 2 + translate.dx * scale}, ${height / 2 + translate.dy * scale})`}>
+      <g
+        data-layer="space"
+        transform={`translate(${width / 2 + translate.dx * scale}, ${height / 2 + translate.dy * scale})`}
+      >
         <AxisLayer />
         <ConstraintsLayer />
-        {/* Segments */}
-        {sketch.geos
-          .filter((g) => g.geo === EGeo.Segment)
-          .map((geo) => {
-            const a = getGeoOf(EGeo.Point, geo.a_id);
-            const b = getGeoOf(EGeo.Point, geo.b_id);
+        <g data-layer="geometry">
+          {/* Segments */}
+          {sketch.geos
+            .filter((g) => g.geo === EGeo.Segment)
+            .map((geo) => {
+              const a = getGeoOf(EGeo.Point, geo.a_id);
+              const b = getGeoOf(EGeo.Point, geo.b_id);
 
-            return (
-              <Fragment key={geo.id}>
-                <line
-                  x1={a.x[0] * scale}
-                  y1={a.y[0] * scale}
-                  x2={b.x[0] * scale}
-                  y2={b.y[0] * scale}
-                  strokeWidth={theme.lineWidth}
-                  stroke={getLineColor(geo.id)}
-                />
-                <line
-                  x1={a.x[0] * scale}
-                  y1={a.y[0] * scale}
-                  x2={b.x[0] * scale}
-                  y2={b.y[0] * scale}
-                  strokeWidth={theme.interactiveStrokeWidth}
-                  stroke={theme.hitColor}
-                  data-geo-id={geo.id}
-                  onClick={handleGeoClick}
-                  onMouseEnter={handleGeoMouseEnter}
-                  onMouseLeave={handleGeoMouseLeave}
-                />
-              </Fragment>
-            );
-          })}
-        {/* Circles */}
-        {sketch.geos
-          .filter((g) => g.geo === EGeo.Circle)
-          .map((geo) => {
-            const c = getGeoOf(EGeo.Point, geo.c_id);
+              return (
+                <Fragment key={geo.id}>
+                  <line
+                    x1={a.x[0] * scale}
+                    y1={a.y[0] * scale}
+                    x2={b.x[0] * scale}
+                    y2={b.y[0] * scale}
+                    strokeWidth={theme.lineWidth}
+                    stroke={getLineColor(geo.id)}
+                  />
+                  <line
+                    x1={a.x[0] * scale}
+                    y1={a.y[0] * scale}
+                    x2={b.x[0] * scale}
+                    y2={b.y[0] * scale}
+                    strokeWidth={theme.interactiveStrokeWidth}
+                    stroke={theme.hitColor}
+                    data-geo-id={geo.id}
+                    onClick={handleGeoClick}
+                    onMouseEnter={handleGeoMouseEnter}
+                    onMouseLeave={handleGeoMouseLeave}
+                  />
+                </Fragment>
+              );
+            })}
+          {/* Circles */}
+          {sketch.geos
+            .filter((g) => g.geo === EGeo.Circle)
+            .map((geo) => {
+              const c = getGeoOf(EGeo.Point, geo.c_id);
 
-            return (
-              <Fragment key={geo.id}>
-                <circle
-                  cx={c.x[0] * scale}
-                  cy={c.y[0] * scale}
-                  r={geo.r[0] * scale}
-                  strokeWidth={theme.lineWidth}
-                  stroke={getLineColor(geo.id)}
-                  fill="none"
-                />
-                <circle
-                  cx={c.x[0] * scale}
-                  cy={c.y[0] * scale}
-                  r={geo.r[0] * scale}
-                  strokeWidth={theme.interactiveStrokeWidth}
-                  stroke={theme.hitColor}
-                  fill="none"
-                  data-geo-id={geo.id}
-                  onClick={handleGeoClick}
-                  onMouseEnter={handleGeoMouseEnter}
-                  onMouseLeave={handleGeoMouseLeave}
-                />
-              </Fragment>
-            );
-          })}
-        {/* Points */}
-        {sketch.geos
-          .filter((g) => g.geo === EGeo.Point)
-          .map((geo) => {
-            let color = theme.pointColor;
+              return (
+                <Fragment key={geo.id}>
+                  <circle
+                    cx={c.x[0] * scale}
+                    cy={c.y[0] * scale}
+                    r={geo.r[0] * scale}
+                    strokeWidth={theme.lineWidth}
+                    stroke={getLineColor(geo.id)}
+                    fill="none"
+                  />
+                  <circle
+                    cx={c.x[0] * scale}
+                    cy={c.y[0] * scale}
+                    r={geo.r[0] * scale}
+                    strokeWidth={theme.interactiveStrokeWidth}
+                    stroke={theme.hitColor}
+                    fill="none"
+                    data-geo-id={geo.id}
+                    onClick={handleGeoClick}
+                    onMouseEnter={handleGeoMouseEnter}
+                    onMouseLeave={handleGeoMouseLeave}
+                  />
+                </Fragment>
+              );
+            })}
+          {/* Points */}
+          {sketch.geos
+            .filter((g) => g.geo === EGeo.Point)
+            .map((geo) => {
+              let color = theme.pointColor;
 
-            // Если точка фиксированная или объединенная, то она имеет цвет ограничения
-            for (const c of sketch.constraints) {
-              if (
-                (c.constraint === EConstraint.Coincident && (c.a_id === geo.id || c.b_id === geo.id)) ||
-                (c.constraint === EConstraint.Fix && c.p_id === geo.id)
-              ) {
-                color = theme.constraintColor;
-                break;
+              // Если точка фиксированная или объединенная, то она имеет цвет ограничения
+              for (const c of sketch.constraints) {
+                if (
+                  (c.constraint === EConstraint.Coincident && (c.a_id === geo.id || c.b_id === geo.id)) ||
+                  (c.constraint === EConstraint.Fix && c.p_id === geo.id)
+                ) {
+                  color = theme.constraintColor;
+                  break;
+                }
               }
-            }
 
-            if (preselectedGeoId === geo.id) {
-              color = theme.preselectedColor;
-            } else if (selectedGeoIds.includes(geo.id)) {
-              color = theme.selectedColor;
-            }
+              if (preselectedGeoId === geo.id) {
+                color = theme.preselectedColor;
+              } else if (selectedGeoIds.includes(geo.id)) {
+                color = theme.selectedColor;
+              }
 
-            const x = geo.x[0];
-            const y = geo.y[0];
+              const x = geo.x[0];
+              const y = geo.y[0];
 
-            return (
-              <Fragment key={geo.id}>
-                <circle cx={x * scale} cy={y * scale} r={theme.pointRadius} fill={color} />
-                <circle
-                  cx={x * scale}
-                  cy={y * scale}
-                  r={theme.interactivePointRadius}
-                  fill={theme.hitColor}
-                  data-geo-id={geo.id}
-                  onClick={handleGeoClick}
-                  onMouseEnter={handleGeoMouseEnter}
-                  onMouseLeave={handleGeoMouseLeave}
-                />
-              </Fragment>
-            );
-          })}
+              return (
+                <Fragment key={geo.id}>
+                  <circle cx={x * scale} cy={y * scale} r={theme.pointRadius} fill={color} />
+                  <circle
+                    cx={x * scale}
+                    cy={y * scale}
+                    r={theme.interactivePointRadius}
+                    fill={theme.hitColor}
+                    data-geo-id={geo.id}
+                    onClick={handleGeoClick}
+                    onMouseEnter={handleGeoMouseEnter}
+                    onMouseLeave={handleGeoMouseLeave}
+                  />
+                </Fragment>
+              );
+            })}
+        </g>
       </g>
       {/* INFO */}
-      <g>
+      <g data-layer="info">
         <text x={0} y={0} fontFamily="monospace">
           <tspan x="0" dy="1.2em">
             i={stat.i.toLocaleString()}

@@ -190,7 +190,7 @@ function ConstraintsLayer() {
   const clusters = clusterLabels(labels, 20);
 
   return (
-    <g>
+    <g data-layer="constraints">
       {sketch.constraints
         .filter((c) => c.constraint === EConstraint.Distance)
         .map((c) => {
@@ -229,6 +229,7 @@ function ConstraintsLayer() {
                   `M ${bx * scale + ny * dl}, ${by * scale - nx * dl}`,
                   `L ${bx * scale} ${by * scale}`,
                 ].join(" ")}
+                fill="none"
                 stroke={theme.constraintColor}
                 strokeWidth={theme.lineWidth}
               />
@@ -269,6 +270,72 @@ function ConstraintsLayer() {
                 x={pcx + Math.cos(angle) * dist}
                 y={pcy + Math.sin(angle) * dist}
                 text={`R${con.r.toLocaleString()}`}
+              />
+            </Fragment>
+          );
+        })}
+      {sketch.constraints
+        .filter((c) => c.constraint === EConstraint.Angle)
+        .map((c) => {
+          const A = getGeoOf(EGeo.Segment, c.a_id);
+          const B = getGeoOf(EGeo.Segment, c.b_id);
+
+          const a1 = getGeoOf(EGeo.Point, A.a_id);
+          const a2 = getGeoOf(EGeo.Point, A.b_id);
+          const b1 = getGeoOf(EGeo.Point, B.a_id);
+          const b2 = getGeoOf(EGeo.Point, B.b_id);
+
+          const a1x = a1.x[0];
+          const a1y = a1.y[0];
+          const a2x = a2.x[0];
+          const a2y = a2.y[0];
+          const b1x = b1.x[0];
+          const b1y = b1.y[0];
+          const b2x = b2.x[0];
+          const b2y = b2.y[0];
+
+          const dxA = a2x - a1x;
+          const dyA = a2y - a1y;
+          const dxB = b2x - b1x;
+          const dyB = b2y - b1y;
+
+          const det = dxB * dyA - dxA * dyB;
+
+          if (Math.abs(det) < 1e-10) return <g key={c.id} data-error="ANGLE_OF_PARALLEL" />;
+
+          const t = (dxB * (b1y - a1y) - (b1x - a1x) * dyB) / det;
+
+          const x = a1x + t * dxA;
+          const y = a1y + t * dyA;
+
+          const angle1 = Math.atan2(a2y - y, a2x - x);
+          const angle2 = Math.atan2(b2y - y, b2x - x);
+          const sweepFlag = angle1 > angle2 ? (angle1 - angle2 > Math.PI ? 1 : 0) : angle2 - angle1 > Math.PI ? 0 : 1;
+
+          const radius = 20;
+          const tRadius = 8 + radius;
+
+          return (
+            <Fragment key={c.id}>
+              <path
+                d={[
+                  `M ${x * scale} ${y * scale}`,
+                  `L ${a1x * scale}, ${a1y * scale}`,
+                  `M ${x * scale} ${y * scale}`,
+                  `L ${b1x * scale}, ${b1y * scale}`,
+                  `M ${x * scale + radius * Math.cos(angle1)} ${y * scale + radius * Math.sin(angle1)}`,
+                  `A ${radius} ${radius} 0 0 ${sweepFlag} ${x * scale + radius * Math.cos(angle2)} ${
+                    y * scale + radius * Math.sin(angle2)
+                  }`,
+                ].join(" ")}
+                fill="none"
+                stroke={theme.constraintColor}
+                strokeWidth={theme.lineWidth}
+              />
+              <MarkerText
+                x={x * scale + tRadius * Math.cos((angle1 + angle2) / 2)}
+                y={y * scale + tRadius * Math.sin((angle1 + angle2) / 2)}
+                text={`${c.a.toLocaleString()}°`}
               />
             </Fragment>
           );

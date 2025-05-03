@@ -14,6 +14,7 @@ import {
   TConstraintPointOnLine,
   TConstraintVertical,
   TConstraintHorizontal,
+  TConstraintParallel,
 } from "./types";
 
 const ERROR_TOLERANCE = 1e-5;
@@ -175,6 +176,7 @@ export class SketchSolver {
 
         return [a.x, a.y, b.x, b.y];
       }
+      case EConstraint.Parallel:
       case EConstraint.Perpendicular: {
         const A = this._getGeo(constraint.a_id, EGeo.Segment);
         const B = this._getGeo(constraint.b_id, EGeo.Segment);
@@ -231,6 +233,8 @@ export class SketchSolver {
         return this._errorDistance(constraint);
       case EConstraint.Perpendicular:
         return this._errorPerpendicular(constraint);
+      case EConstraint.Parallel:
+        return this._errorParallel(constraint);
       case EConstraint.Coincident:
         return this._errorCoincident(constraint);
       case EConstraint.Radius:
@@ -256,6 +260,8 @@ export class SketchSolver {
         return this._gradDistance(constraint, params);
       case EConstraint.Perpendicular:
         return this._gradPerpendicular(constraint, params);
+      case EConstraint.Parallel:
+        return this._gradParallel(constraint, params);
       case EConstraint.Coincident:
         return this._gradCoincident(constraint, params);
       case EConstraint.Radius:
@@ -400,6 +406,51 @@ export class SketchSolver {
     params.get(C.y)![0] += -dy1 * dErr;
     params.get(D.x)![0] += +dx1 * dErr;
     params.get(D.y)![0] += +dy1 * dErr;
+  }
+
+  private _errorParallel(constraint: TConstraintParallel): number {
+    const a = this._getGeo(constraint.a_id, EGeo.Segment);
+    const b = this._getGeo(constraint.b_id, EGeo.Segment);
+
+    const A = this._getGeo(a.a_id, EGeo.Point);
+    const B = this._getGeo(a.b_id, EGeo.Point);
+    const C = this._getGeo(b.a_id, EGeo.Point);
+    const D = this._getGeo(b.b_id, EGeo.Point);
+
+    const dx1 = B.x[0] - A.x[0];
+    const dy1 = B.y[0] - A.y[0];
+    const dx2 = D.x[0] - C.x[0];
+    const dy2 = D.y[0] - C.y[0];
+
+    const err = (dx1 * dy2 - dy1 * dx2) ** 2;
+
+    return err;
+  }
+
+  private _gradParallel(constraint: TConstraintParallel, params: Map<TParam, TParam>) {
+    const a = this._getGeo(constraint.a_id, EGeo.Segment);
+    const b = this._getGeo(constraint.b_id, EGeo.Segment);
+
+    const A = this._getGeo(a.a_id, EGeo.Point);
+    const B = this._getGeo(a.b_id, EGeo.Point);
+    const C = this._getGeo(b.a_id, EGeo.Point);
+    const D = this._getGeo(b.b_id, EGeo.Point);
+
+    const dx1 = B.x[0] - A.x[0];
+    const dy1 = B.y[0] - A.y[0];
+    const dx2 = D.x[0] - C.x[0];
+    const dy2 = D.y[0] - C.y[0];
+
+    const dErr = 2 * (dx1 * dy2 - dy1 * dx2);
+
+    params.get(A.x)![0] += -dy2 * dErr;
+    params.get(A.y)![0] += +dx2 * dErr;
+    params.get(B.x)![0] += +dy2 * dErr;
+    params.get(B.y)![0] += -dx2 * dErr;
+    params.get(C.x)![0] += +dy1 * dErr;
+    params.get(C.y)![0] += -dx1 * dErr;
+    params.get(D.x)![0] += -dy1 * dErr;
+    params.get(D.y)![0] += +dx1 * dErr;
   }
 
   private _errorRadius(constraint: TConstraintRadius): number {

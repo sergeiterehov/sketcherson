@@ -5,6 +5,7 @@ import {
   TConstraintDistance,
   TConstraintFix,
   TConstraintHorizontal,
+  TConstraintParallel,
   TConstraintPerpendicular,
   TConstraintPointOnCircle,
   TConstraintPointOnLine,
@@ -78,6 +79,19 @@ export const makePerpendicular = (sketch: TSketch, a: TGeoSegment, b: TGeoSegmen
   const c: TConstraintPerpendicular = {
     id: makeId(),
     constraint: EConstraint.Perpendicular,
+    a_id: a.id,
+    b_id: b.id,
+  };
+
+  sketch.constraints.push(c);
+
+  return c;
+};
+
+export const makeParallel = (sketch: TSketch, a: TGeoSegment, b: TGeoSegment): TConstraintParallel => {
+  const c: TConstraintParallel = {
+    id: makeId(),
+    constraint: EConstraint.Parallel,
     a_id: a.id,
     b_id: b.id,
   };

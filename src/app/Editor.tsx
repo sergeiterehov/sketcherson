@@ -8,6 +8,7 @@ import Renderer from "./render/Renderer";
 import styled from "@emotion/styled";
 import { FloatingToolBarContainer } from "@/components/toolbar";
 import ViewportContext from "./render/ViewportContext";
+import useShortcuts from "./utils/useShortcuts";
 
 const EditorContainer = styled.div({
   display: "flex",
@@ -33,6 +34,8 @@ function ViewportSizeObserver(props: { children: React.ReactNode }) {
 }
 
 export default function Editor() {
+  const shortcuts = useShortcuts();
+
   const resetGeoSelection = useEditorStore((s) => s.resetGeoSelection);
   const init = useEditorStore((s) => s.init);
   const reset = useEditorStore((s) => s.reset);
@@ -41,13 +44,15 @@ export default function Editor() {
   const createDistance = useEditorStore((s) => s.createDistance);
   const createAlign = useEditorStore((s) => s.createAlign);
   const createPerpendicular = useEditorStore((s) => s.createPerpendicular);
+  const createParallel = useEditorStore((s) => s.createParallel);
 
-  useKey("Escape", resetGeoSelection);
-  useKey("x", createCoincident);
-  useKey("r", createRadius);
-  useKey("d", createDistance);
-  useKey("a", createAlign);
-  useKey("p", createPerpendicular);
+  useKey(shortcuts.cancel, resetGeoSelection);
+  useKey(shortcuts.coincident, createCoincident);
+  useKey(shortcuts.radius, createRadius);
+  useKey(shortcuts.distance, createDistance);
+  useKey(shortcuts.align, createAlign);
+  useKey(shortcuts.perpendicular, createPerpendicular);
+  useKey(shortcuts.parallel, createParallel);
 
   useEffect(() => {
     init(JSON.parse(JSON.stringify(sampleSketch)));

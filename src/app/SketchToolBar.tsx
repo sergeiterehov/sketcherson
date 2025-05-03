@@ -12,13 +12,17 @@ import PointIcon from "@/icons/PointIcon";
 import CircleIcon from "@/icons/CircleIcon";
 import SegmentIcon from "@/icons/SegmentIcon";
 import ArcIcon from "@/icons/ArcIcon";
+import useShortcuts from "./utils/useShortcuts";
 
 export default function SketchToolBar() {
+  const shortcuts = useShortcuts();
+
   const createCoincident = useEditorStore((s) => s.createCoincident);
   const createRadius = useEditorStore((s) => s.createRadius);
   const createDistance = useEditorStore((s) => s.createDistance);
   const createAlign = useEditorStore((s) => s.createAlign);
   const createPerpendicular = useEditorStore((s) => s.createPerpendicular);
+  const createParallel = useEditorStore((s) => s.createParallel);
 
   const handleCoincidentClick = () => {
     createCoincident();
@@ -31,8 +35,17 @@ export default function SketchToolBar() {
   const handleDistanceClick = () => {
     createDistance();
   };
+
   const handleAlignClick = () => {
     createAlign();
+  };
+
+  const handlePerpendicularClick = () => {
+    createPerpendicular();
+  };
+
+  const handleParallelClick = () => {
+    createParallel();
   };
 
   return (
@@ -56,22 +69,22 @@ export default function SketchToolBar() {
         <ToolBarButton>
           <FixPointIcon />
         </ToolBarButton>
-        <ToolBarButton title="Coincident [X]" onClick={handleCoincidentClick}>
+        <ToolBarButton title={`Coincident [${shortcuts.coincident}]`} onClick={handleCoincidentClick}>
           <AnyCoincidentIcon />
         </ToolBarButton>
-        <ToolBarButton title="Distance [D]" onClick={handleDistanceClick}>
+        <ToolBarButton title={`Distance [${shortcuts.distance}]`} onClick={handleDistanceClick}>
           <DistanceIcon />
         </ToolBarButton>
-        <ToolBarButton title="Radius [R]" onClick={handleRadiusClick}>
+        <ToolBarButton title={`Radius [${shortcuts.radius}]`} onClick={handleRadiusClick}>
           <RadiusIcon />
         </ToolBarButton>
-        <ToolBarButton title="Perpendicular [P]" onClick={createPerpendicular}>
+        <ToolBarButton title={`Perpendicular [${shortcuts.perpendicular}]`} onClick={handlePerpendicularClick}>
           <PerpendicularIcon />
         </ToolBarButton>
-        <ToolBarButton>
+        <ToolBarButton title={`Parallel [${shortcuts.parallel}]`} onClick={handleParallelClick}>
           <ParallelIcon />
         </ToolBarButton>
-        <ToolBarButton title="Axis align [A]" onClick={handleAlignClick}>
+        <ToolBarButton title={`Axis align [${shortcuts.align}]`} onClick={handleAlignClick}>
           <AlignIcon />
         </ToolBarButton>
         <ToolBarButton>

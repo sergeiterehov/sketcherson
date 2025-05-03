@@ -12,9 +12,10 @@ const markerChars: { [K in EConstraint]?: string } = {
   [EConstraint.Vertical]: "|",
   [EConstraint.Horizontal]: "-",
   [EConstraint.Perpendicular]: "T",
+  [EConstraint.Parallel]: "/",
 };
 
-const alwaysWithNumber = new Set([EConstraint.Perpendicular]);
+const alwaysWithNumber = new Set([EConstraint.Perpendicular, EConstraint.Parallel]);
 
 function clusterLabels(labels: TLabel[], threshold: number): TLabelCluster[] {
   const clusters: TLabelCluster[] = [];
@@ -120,7 +121,7 @@ function ConstraintsLayer() {
         x: p.x[0] * scale + Math.cos(angle) * dist,
         y: p.y[0] * scale + Math.sin(angle) * dist,
       });
-    } else if (con.constraint === EConstraint.Perpendicular) {
+    } else if (con.constraint === EConstraint.Perpendicular || con.constraint === EConstraint.Parallel) {
       const sa = getGeoOf(EGeo.Segment, con.a_id);
       const sb = getGeoOf(EGeo.Segment, con.b_id);
 

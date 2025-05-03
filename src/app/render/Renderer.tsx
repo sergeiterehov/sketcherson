@@ -24,7 +24,6 @@ export default function Renderer() {
   const toggleGeoSelection = useEditorStore((s) => s.toggleGeoSelection);
   const setPreselectedGeo = useEditorStore((s) => s.setPreselectedGeo);
   const getGeoOf = useEditorStore((s) => s.getGeoOf);
-  const getGeoConstraints = useEditorStore((s) => s.getGeoConstraints);
 
   const handleGeoMouseEnter = (e: React.MouseEvent<SVGElement>) => {
     const id = Number(e.currentTarget.dataset.geoId);
@@ -192,13 +191,14 @@ export default function Renderer() {
         {sketch.geos
           .filter((g) => g.geo === EGeo.Point)
           .map((geo) => {
-            const constraints = getGeoConstraints(geo.id);
-
             let color = theme.pointColor;
 
             // Если точка фиксированная или объединенная, то она имеет цвет ограничения
-            for (const c of constraints) {
-              if (c.constraint === EConstraint.Coincident || c.constraint === EConstraint.Fix) {
+            for (const c of sketch.constraints) {
+              if (
+                (c.constraint === EConstraint.Coincident && (c.a_id === geo.id || c.b_id === geo.id)) ||
+                (c.constraint === EConstraint.Fix && c.p_id === geo.id)
+              ) {
                 color = theme.constraintColor;
                 break;
               }

@@ -12,6 +12,7 @@ export enum EGeo {
 export enum EConstraint {
   Distance = "distance",
   Perpendicular = "perpendicular",
+  Parallel = "parallel",
   Coincident = "coincident",
   Fix = "fix",
   Radius = "radius",
@@ -61,6 +62,14 @@ export type TConstraintDistance = TSomeConstraint<
 
 export type TConstraintPerpendicular = TSomeConstraint<
   EConstraint.Perpendicular,
+  {
+    a_id: TID;
+    b_id: TID;
+  }
+>;
+
+export type TConstraintParallel = TSomeConstraint<
+  EConstraint.Parallel,
   {
     a_id: TID;
     b_id: TID;
@@ -127,6 +136,7 @@ export type TConstraintHorizontal = TSomeConstraint<
 export type TConstraint =
   | TConstraintDistance
   | TConstraintPerpendicular
+  | TConstraintParallel
   | TConstraintCoincident
   | TConstraintFix
   | TConstraintRadius

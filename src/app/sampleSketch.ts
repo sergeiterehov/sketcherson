@@ -2,7 +2,6 @@ import {
   makeCircle3,
   makeDistance,
   makeFix,
-  makePerpendicular,
   makePoint,
   makeRadius,
   makeRect4,
@@ -20,9 +19,7 @@ const c1 = makeCircle3(sampleSketch, -200, 200, 20);
 makeRadius(sampleSketch, c1[0], 40);
 makePoint(sampleSketch, 100, -100);
 const s1 = makeSegment4(sampleSketch, 10, 200, 100, 250);
-const s2 = makeSegment4(sampleSketch, 10, -200, 100, -290);
-const s3 = makeSegment4(sampleSketch, 0, -100, 50, -150);
+makeSegment4(sampleSketch, 10, -200, 100, -290);
+makeSegment4(sampleSketch, 0, -100, 100, -150);
 makeDistance(sampleSketch, s1[1], s1[2], 150);
-makePerpendicular(sampleSketch, s1[0], s2[0]);
-makePerpendicular(sampleSketch, s1[0], s3[0]);
 makeCircle3(sampleSketch, -200, -200, 10);

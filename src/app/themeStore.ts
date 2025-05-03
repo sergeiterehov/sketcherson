@@ -15,6 +15,16 @@ type TThemeStore = {
     interactiveStrokeWidth: number;
     interactivePointRadius: number;
   };
+
+  shortcuts: {
+    cancel: string;
+    coincident: string;
+    radius: string;
+    distance: string;
+    align: string;
+    perpendicular: string;
+    parallel: string;
+  };
 };
 
 const useThemeStore = create<TThemeStore>(() => ({
@@ -31,6 +41,16 @@ const useThemeStore = create<TThemeStore>(() => ({
     pointRadius: 2,
     interactiveStrokeWidth: 8,
     interactivePointRadius: 5,
+  },
+
+  shortcuts: {
+    cancel: "Escape",
+    coincident: "x",
+    radius: "r",
+    distance: "d",
+    align: "a",
+    perpendicular: "l",
+    parallel: "i",
   },
 }));
 

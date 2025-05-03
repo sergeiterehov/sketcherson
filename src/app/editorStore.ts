@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { SketchSolver } from "@/core/solver";
-import { EConstraint, EGeo, TConstraint, TGeo, TID, TSketch } from "@/core/types";
+import { EGeo, TGeo, TID, TSketch } from "@/core/types";
 import {
   makeCoincident,
   makeDistance,
   makeHorizontalOrVertical,
+  makeParallel,
   makePerpendicular,
   makePointOnCircle,
   makePointOnLine,
@@ -52,13 +53,13 @@ type TEditorStore = {
 
   getGeo(id: TID): TGeo;
   getGeoOf<G extends EGeo>(type: G, id: TID): TGeo & { geo: G };
-  getGeoConstraints(id: TID): TConstraint[];
 
   createCoincident(): void;
   createRadius(): void;
   createDistance(): void;
   createAlign(): void;
   createPerpendicular(): void;
+  createParallel(): void;
 
   _explainSelectedParams(): void;
 
@@ -169,37 +170,6 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     if (geo.geo !== type) throw new Error(`Geo ID:${id} has type ${geo.geo}, but ${type} required`);
 
     return geo as TGeo & { geo: typeof type };
-  },
-
-  getGeoConstraints: (id) => {
-    // TODO: переделать на map, обновляемый в _updateGeoMap
-    const result: TConstraint[] = [];
-
-    const { sketch } = get();
-
-    if (!sketch) return result;
-
-    for (const c of sketch.constraints) {
-      let ok = false;
-
-      if (c.constraint === EConstraint.Perpendicular) {
-        ok = c.a_id === id || c.b_id === id;
-      } else if (c.constraint === EConstraint.Coincident) {
-        ok = c.a_id === id || c.b_id === id;
-      } else if (c.constraint === EConstraint.PointOnCircle) {
-        ok = c.c_id === id || c.p_id === id;
-      } else if (c.constraint === EConstraint.PointOnLine) {
-        ok = c.l_id === id || c.p_id === id;
-      } else if (c.constraint === EConstraint.Radius) {
-        ok = c.c_id === id;
-      } else if (c.constraint === EConstraint.Distance) {
-        ok = c.a_id === id || c.b_id === id;
-      }
-
-      if (ok) result.push(c);
-    }
-
-    return result;
   },
 
   createCoincident: () => {
@@ -349,6 +319,23 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     _solve();
   },
 
+  createParallel: () => {
+    const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
+
+    if (!sketch) return;
+
+    const segments = getSelectedGeos().filter((g) => g.geo === EGeo.Segment);
+
+    if (segments.length !== 2) return;
+
+    const [a, b] = segments;
+
+    makeParallel(sketch, a, b);
+
+    resetGeoSelection();
+    _solve();
+  },
+
   _explainSelectedParams: () => {
     const params: TEditorStore["paramsOfSelectedGeo"] = {};
 
@@ -398,7 +385,7 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
     const frameTime = 16;
 
-    const solving = solver.solve({ rollbackOnError: false, iterationsLimit: 10_000_000, logDivider: 20_000 });
+    const solving = solver.solve({ rollbackOnError: false, iterationsLimit: 10_000_000, logDivider: 1 });
 
     let prevStepAt = 0;
     let animRequest = 0;

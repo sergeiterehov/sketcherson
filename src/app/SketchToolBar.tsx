@@ -61,6 +61,9 @@ export default function SketchToolBar() {
         <ToolBarButton title="Distance or length [D]" onClick={handleDistanceClick}>
           <DistanceIcon />
         </ToolBarButton>
+        <ToolBarButton title="Radius [R]" onClick={handleRadiusClick}>
+          <RadiusIcon />
+        </ToolBarButton>
         <ToolBarButton>
           <PerpendicularIcon />
         </ToolBarButton>
@@ -72,9 +75,6 @@ export default function SketchToolBar() {
         </ToolBarButton>
         <ToolBarButton>
           <TangentIcon />
-        </ToolBarButton>
-        <ToolBarButton title="Radius [R]" onClick={handleRadiusClick}>
-          <RadiusIcon />
         </ToolBarButton>
       </ToolBarGroup>
     </ToolBar>

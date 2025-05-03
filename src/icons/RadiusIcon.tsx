@@ -8,7 +8,7 @@ export default function RadiusIcon(props: React.SVGProps<SVGSVGElement>) {
         stroke="black"
       />
       <line x1="15.3536" y1="8.35355" x2="8.35355" y2="15.3536" stroke="#FF0000" />
-      <circle cx="15.5" cy="8.5" r="1.5" fill="black" />
+      <circle cx="15" cy="9" r="2" fill="black" />
     </svg>
   );
 }

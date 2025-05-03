@@ -2,7 +2,7 @@ import styled from "@emotion/styled";
 
 export const ToolBarSeparator = styled.div({
   width: 1,
-  backgroundColor: "#DDD",
+  backgroundColor: "#EEE",
   flexShrink: 0,
   height: "100%",
 });
@@ -26,7 +26,7 @@ export const ToolBarButton = styled.div({
     pointerEvents: "inherit",
 
     ":hover": {
-      backgroundColor: "#EEE",
+      backgroundColor: "#F6F6F6",
     },
   },
 });

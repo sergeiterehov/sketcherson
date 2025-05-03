@@ -8,8 +8,8 @@ export default function AnyCoincidentIcon(props: React.SVGProps<SVGSVGElement>) 
         stroke="black"
       />
       <line x1="4.64645" y1="18.6464" x2="17.6464" y2="5.64645" stroke="black" />
-      <circle cx="12" cy="11" r="3" fill="black" />
-      <circle cx="10" cy="13" r="3" fill="#FF0000" />
+      <circle cx="13" cy="10" r="2" fill="black" />
+      <circle cx="9" cy="14" r="3" fill="#FF0000" />
     </svg>
   );
 }

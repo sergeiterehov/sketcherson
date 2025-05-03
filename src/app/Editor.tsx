@@ -40,12 +40,14 @@ export default function Editor() {
   const createRadius = useEditorStore((s) => s.createRadius);
   const createDistance = useEditorStore((s) => s.createDistance);
   const createAlign = useEditorStore((s) => s.createAlign);
+  const createPerpendicular = useEditorStore((s) => s.createPerpendicular);
 
   useKey("Escape", resetGeoSelection);
   useKey("x", createCoincident);
   useKey("r", createRadius);
   useKey("d", createDistance);
   useKey("a", createAlign);
+  useKey("p", createPerpendicular);
 
   useEffect(() => {
     init(JSON.parse(JSON.stringify(sampleSketch)));

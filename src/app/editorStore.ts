@@ -5,6 +5,7 @@ import {
   makeCoincident,
   makeDistance,
   makeHorizontalOrVertical,
+  makePerpendicular,
   makePointOnCircle,
   makePointOnLine,
   makeRadius,
@@ -57,6 +58,7 @@ type TEditorStore = {
   createRadius(): void;
   createDistance(): void;
   createAlign(): void;
+  createPerpendicular(): void;
 
   _explainSelectedParams(): void;
 
@@ -325,6 +327,23 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
       makeHorizontalOrVertical(sketch, a, b);
     }
+
+    resetGeoSelection();
+    _solve();
+  },
+
+  createPerpendicular: () => {
+    const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
+
+    if (!sketch) return;
+
+    const segments = getSelectedGeos().filter((g) => g.geo === EGeo.Segment);
+
+    if (segments.length !== 2) return;
+
+    const [a, b] = segments;
+
+    makePerpendicular(sketch, a, b);
 
     resetGeoSelection();
     _solve();

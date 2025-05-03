@@ -18,6 +18,7 @@ export default function SketchToolBar() {
   const createRadius = useEditorStore((s) => s.createRadius);
   const createDistance = useEditorStore((s) => s.createDistance);
   const createAlign = useEditorStore((s) => s.createAlign);
+  const createPerpendicular = useEditorStore((s) => s.createPerpendicular);
 
   const handleCoincidentClick = () => {
     createCoincident();
@@ -58,19 +59,19 @@ export default function SketchToolBar() {
         <ToolBarButton title="Coincident [X]" onClick={handleCoincidentClick}>
           <AnyCoincidentIcon />
         </ToolBarButton>
-        <ToolBarButton title="Distance or length [D]" onClick={handleDistanceClick}>
+        <ToolBarButton title="Distance [D]" onClick={handleDistanceClick}>
           <DistanceIcon />
         </ToolBarButton>
         <ToolBarButton title="Radius [R]" onClick={handleRadiusClick}>
           <RadiusIcon />
         </ToolBarButton>
-        <ToolBarButton>
+        <ToolBarButton title="Perpendicular [P]" onClick={createPerpendicular}>
           <PerpendicularIcon />
         </ToolBarButton>
         <ToolBarButton>
           <ParallelIcon />
         </ToolBarButton>
-        <ToolBarButton title="Align vertical or horizontal [A]" onClick={handleAlignClick}>
+        <ToolBarButton title="Axis align [A]" onClick={handleAlignClick}>
           <AlignIcon />
         </ToolBarButton>
         <ToolBarButton>

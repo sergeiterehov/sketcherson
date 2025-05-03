@@ -8,6 +8,7 @@ type TEditorStore = {
   translate: { dx: number; dy: number };
   pointer: { x: number; y: number };
 
+  preselectedGeoId?: TID;
   selectedGeoIds: TID[];
 
   sketch?: TSketch;
@@ -36,6 +37,7 @@ type TEditorStore = {
   moveTranslate(dx: number, dy: number): void;
   setPointer(x: number, y: number): void;
 
+  setPreselectedGeo(id: TID | undefined): void;
   resetGeoSelection(): void;
   toggleGeoSelection(id: TID): void;
   getSelectedGeos(): TGeo[];
@@ -101,6 +103,10 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
   setPointer: (x, y) => {
     set({ pointer: { x, y } });
+  },
+
+  setPreselectedGeo: (id) => {
+    set({ preselectedGeoId: id });
   },
 
   resetGeoSelection: () => {

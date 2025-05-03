@@ -1,13 +1,10 @@
 import { Fragment, use, useEffect, useRef } from "react";
-import { EConstraint, EGeo } from "@/core/types";
+import { EConstraint, EGeo, TID } from "@/core/types";
 import useEditorStore from "../editorStore";
 import ViewportContext from "./ViewportContext";
 import ConstraintsLayer from "./ConstraintsLayer";
 import useTheme from "../utils/useTheme";
 import AxisLayer from "./AxisLayer";
-
-const interactiveStrokeWidth = 8;
-const interactivePointRadius = 5;
 
 export default function Renderer() {
   const theme = useTheme();
@@ -23,9 +20,27 @@ export default function Renderer() {
   const stat = useEditorStore((s) => s.solvingStats);
   const paramsOfSelectedGeo = useEditorStore((s) => s.paramsOfSelectedGeo);
   const selectedGeoIds = useEditorStore((s) => s.selectedGeoIds);
+  const preselectedGeoId = useEditorStore((s) => s.preselectedGeoId);
   const toggleGeoSelection = useEditorStore((s) => s.toggleGeoSelection);
+  const setPreselectedGeo = useEditorStore((s) => s.setPreselectedGeo);
   const getGeoOf = useEditorStore((s) => s.getGeoOf);
   const getGeoConstraints = useEditorStore((s) => s.getGeoConstraints);
+
+  const handleGeoMouseEnter = (e: React.MouseEvent<SVGElement>) => {
+    const id = Number(e.currentTarget.dataset.geoId);
+
+    if (Number.isNaN(id)) return;
+
+    setPreselectedGeo(id);
+  };
+
+  const handleGeoMouseLeave = (e: React.MouseEvent<SVGElement>) => {
+    const id = Number(e.currentTarget.dataset.geoId);
+
+    if (Number.isNaN(id)) return;
+
+    setPreselectedGeo(undefined);
+  };
 
   const handleGeoClick = (e: React.MouseEvent<SVGElement>) => {
     const id = Number(e.currentTarget.dataset.geoId);
@@ -93,6 +108,18 @@ export default function Renderer() {
 
   if (!sketch) return "NO_SKETCH";
 
+  const getLineColor = (geoId: TID) => {
+    if (selectedGeoIds.includes(geoId)) {
+      return theme.selectedColor;
+    }
+
+    if (preselectedGeoId === geoId) {
+      return theme.preselectedColor;
+    }
+
+    return theme.lineColor;
+  };
+
   return (
     <svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ userSelect: "none" }}>
       <g transform={`translate(${width / 2 + translate.dx * scale}, ${height / 2 + translate.dy * scale})`}>
@@ -113,17 +140,19 @@ export default function Renderer() {
                   x2={b.x[0] * scale}
                   y2={b.y[0] * scale}
                   strokeWidth={theme.lineWidth}
-                  stroke={selectedGeoIds.includes(geo.id) ? theme.selectedColor : theme.lineColor}
+                  stroke={getLineColor(geo.id)}
                 />
                 <line
                   x1={a.x[0] * scale}
                   y1={a.y[0] * scale}
                   x2={b.x[0] * scale}
                   y2={b.y[0] * scale}
-                  strokeWidth={interactiveStrokeWidth}
+                  strokeWidth={theme.interactiveStrokeWidth}
                   stroke={theme.hitColor}
                   data-geo-id={geo.id}
                   onClick={handleGeoClick}
+                  onMouseEnter={handleGeoMouseEnter}
+                  onMouseLeave={handleGeoMouseLeave}
                 />
               </Fragment>
             );
@@ -141,18 +170,20 @@ export default function Renderer() {
                   cy={c.y[0] * scale}
                   r={geo.r[0] * scale}
                   strokeWidth={theme.lineWidth}
-                  stroke={selectedGeoIds.includes(geo.id) ? theme.selectedColor : theme.lineColor}
+                  stroke={getLineColor(geo.id)}
                   fill="none"
                 />
                 <circle
                   cx={c.x[0] * scale}
                   cy={c.y[0] * scale}
                   r={geo.r[0] * scale}
-                  strokeWidth={interactiveStrokeWidth}
+                  strokeWidth={theme.interactiveStrokeWidth}
                   stroke={theme.hitColor}
                   fill="none"
                   data-geo-id={geo.id}
                   onClick={handleGeoClick}
+                  onMouseEnter={handleGeoMouseEnter}
+                  onMouseLeave={handleGeoMouseLeave}
                 />
               </Fragment>
             );
@@ -163,7 +194,6 @@ export default function Renderer() {
           .map((geo) => {
             const constraints = getGeoConstraints(geo.id);
 
-            const selected = selectedGeoIds.includes(geo.id);
             let color = theme.pointColor;
 
             // Если точка фиксированная или объединенная, то она имеет цвет ограничения
@@ -174,7 +204,9 @@ export default function Renderer() {
               }
             }
 
-            if (selected) {
+            if (preselectedGeoId === geo.id) {
+              color = theme.preselectedColor;
+            } else if (selectedGeoIds.includes(geo.id)) {
               color = theme.selectedColor;
             }
 
@@ -187,10 +219,12 @@ export default function Renderer() {
                 <circle
                   cx={x * scale}
                   cy={y * scale}
-                  r={interactivePointRadius}
+                  r={theme.interactivePointRadius}
                   fill={theme.hitColor}
                   data-geo-id={geo.id}
                   onClick={handleGeoClick}
+                  onMouseEnter={handleGeoMouseEnter}
+                  onMouseLeave={handleGeoMouseLeave}
                 />
               </Fragment>
             );

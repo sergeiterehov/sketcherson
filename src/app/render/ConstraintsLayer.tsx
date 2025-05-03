@@ -51,6 +51,10 @@ function clusterLabels(labels: TLabel[], threshold: number): TLabelCluster[] {
 
 function MarkerText({
   text,
+  x,
+  y,
+  rotate,
+  transform,
   ...props
 }: Omit<React.SVGTextElementAttributes<SVGTextElement>, "children"> & { text: string }) {
   const theme = useTheme();
@@ -60,7 +64,13 @@ function MarkerText({
   const letterWidth = fontSize * 0.3;
 
   return (
-    <text fontFamily="monospace" fontSize={fontSize} fill={theme.constraintColor} {...props}>
+    <text
+      fontFamily="monospace"
+      fontSize={fontSize}
+      fill={theme.constraintColor}
+      transform={[`translate(${x} ${y})`, rotate && `rotate(${rotate})`, transform].filter(Boolean).join(" ")}
+      {...props}
+    >
       {text.split("\n").map((line, i) => (
         <tspan key={i} x={-letterWidth} y={i * lineHeight + lineHeight - fontSize}>
           {line}
@@ -201,7 +211,7 @@ function ConstraintsLayer() {
           const ny = dy / l;
 
           const d = 40;
-          const dt = 4 + d;
+          const dt = 6 + d;
           const dl = 8 + d;
 
           const cx = ax + (bx - ax) / 2;
@@ -221,14 +231,12 @@ function ConstraintsLayer() {
                 stroke={theme.constraintColor}
                 strokeWidth={theme.lineWidth}
               />
-              <text
-                transform={[`translate(${cx * scale + ny * dt} ${cy * scale - nx * dt})`, `rotate(${angle})`].join(" ")}
-                fontFamily="monospace"
-                fontSize={10}
-                fill={theme.constraintColor}
-              >
-                {c.d.toLocaleString()}
-              </text>
+              <MarkerText
+                x={cx * scale + ny * dt}
+                y={cy * scale - nx * dt}
+                rotate={angle}
+                text={c.d.toLocaleString()}
+              />
             </Fragment>
           );
         })}
@@ -256,15 +264,11 @@ function ConstraintsLayer() {
                 stroke={theme.constraintColor}
                 strokeWidth={theme.lineWidth}
               />
-              <text
+              <MarkerText
                 x={pcx + Math.cos(angle) * dist}
                 y={pcy + Math.sin(angle) * dist}
-                fontFamily="monospace"
-                fontSize={10}
-                fill={theme.constraintColor}
-              >
-                R{con.r.toLocaleString()}
-              </text>
+                text={`R${con.r.toLocaleString()}`}
+              />
             </Fragment>
           );
         })}
@@ -291,7 +295,7 @@ function ConstraintsLayer() {
           })
           .join("\n");
 
-        return <MarkerText key={i} text={text} transform={`translate(${cluster.x} ${cluster.y})`} />;
+        return <MarkerText key={i} text={text} x={cluster.x} y={cluster.y} />;
       })}
     </g>
   );

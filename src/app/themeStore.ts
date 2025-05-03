@@ -5,12 +5,15 @@ type TThemeStore = {
     oxColor: string;
     oyColor: string;
     selectedColor: string;
+    preselectedColor: string;
     lineColor: string;
     pointColor: string;
     constraintColor: string;
     lineWidth: number;
     pointRadius: number;
     hitColor: string;
+    interactiveStrokeWidth: number;
+    interactivePointRadius: number;
   };
 };
 
@@ -18,13 +21,16 @@ const useThemeStore = create<TThemeStore>(() => ({
   theme: {
     oxColor: "#F008",
     oyColor: "#0F08",
-    selectedColor: "#F00",
+    selectedColor: "#08F",
+    preselectedColor: "#0AF",
     lineColor: "#777",
     pointColor: "#444",
     constraintColor: "#D77",
+    hitColor: "#00F0",
     lineWidth: 1,
     pointRadius: 2,
-    hitColor: "#00F0",
+    interactiveStrokeWidth: 8,
+    interactivePointRadius: 5,
   },
 }));
 

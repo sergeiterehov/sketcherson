@@ -31,13 +31,13 @@ type TThemeStore = {
 
 const useThemeStore = create<TThemeStore>(() => ({
   theme: {
-    background: "#F2F2F2",
+    background: "#F6F6F6",
     oxColor: "#F008",
     oyColor: "#0F08",
     selectedColor: "#08F",
     preselectedColor: "#0AF",
-    lineColor: "#777",
-    pointColor: "#444",
+    lineColor: "#666",
+    pointColor: "#333",
     constraintColor: "#D77",
     hitColor: "#00F0",
     lineWidth: 1,

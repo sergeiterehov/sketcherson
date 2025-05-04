@@ -11,7 +11,7 @@ import PointIcon from "@/icons/PointIcon";
 import CircleIcon from "@/icons/CircleIcon";
 import SegmentIcon from "@/icons/SegmentIcon";
 import ArcIcon from "@/icons/ArcIcon";
-import useShortcuts from "./utils/useShortcuts";
+import useShortcuts from "./_utils/useShortcuts";
 import AngleIcon from "@/icons/AngleIcon";
 
 export default function SketchToolBar() {

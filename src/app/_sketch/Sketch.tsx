@@ -2,11 +2,11 @@ import { use, useEffect, useRef } from "react";
 import useEditorStore from "../editorStore";
 import ViewportContext from "./ViewportContext";
 import ConstraintsLayer from "./ConstraintsLayer";
-import useTheme from "../utils/useTheme";
+import useTheme from "../_utils/useTheme";
 import AxisLayer from "./AxisLayer";
 import GeometryLayer from "./GeometryLayer";
 
-export default function Renderer() {
+export default function Sketch() {
   const theme = useTheme();
 
   const svgRef = useRef<SVGSVGElement>(null);

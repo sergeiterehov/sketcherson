@@ -4,11 +4,11 @@ import { useKey, useMeasure } from "react-use";
 import { sampleSketch } from "./sampleSketch";
 import useEditorStore from "./editorStore";
 import SketchToolBar from "./SketchToolBar";
-import Renderer from "./render/Renderer";
+import Sketch from "./_sketch/Sketch";
 import styled from "@emotion/styled";
 import { FloatingToolBarContainer } from "@/components/toolbar";
-import ViewportContext from "./render/ViewportContext";
-import useShortcuts from "./utils/useShortcuts";
+import ViewportContext from "./_sketch/ViewportContext";
+import useShortcuts from "./_utils/useShortcuts";
 
 const EditorContainer = styled.div({
   display: "flex",
@@ -65,7 +65,7 @@ export default function Editor() {
   return (
     <EditorContainer>
       <ViewportSizeObserver>
-        <Renderer />
+        <Sketch />
       </ViewportSizeObserver>
       <FloatingToolBarContainer>
         <SketchToolBar />

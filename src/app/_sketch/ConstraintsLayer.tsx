@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import useEditorStore from "../editorStore";
 import { EConstraint, EGeo, TConstraint } from "@/core/types";
-import useTheme from "../utils/useTheme";
+import useTheme from "../_utils/useTheme";
 
 type TLabel<C extends EConstraint = EConstraint> = { x: number; y: number; con: TConstraint & { constraint: C } };
 type TLabelCluster = { x: number; y: number; labels: TLabel[] };

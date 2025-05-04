@@ -1,5 +1,5 @@
 import useEditorStore from "../editorStore";
-import useTheme from "../utils/useTheme";
+import useTheme from "../_utils/useTheme";
 
 const length = 300;
 

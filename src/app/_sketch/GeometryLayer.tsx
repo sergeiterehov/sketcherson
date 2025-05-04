@@ -1,7 +1,7 @@
 import { TID, EGeo, EConstraint } from "@/core/types";
 import { Fragment } from "react";
 import useEditorStore from "../editorStore";
-import useTheme from "../utils/useTheme";
+import useTheme from "../_utils/useTheme";
 
 export default function GeometryLayer() {
   const theme = useTheme();

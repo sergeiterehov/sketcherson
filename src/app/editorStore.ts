@@ -13,10 +13,18 @@ import {
   makeRadius,
 } from "@/core/utils";
 
+type TCreatingPoint = { x: number; y: number };
+
 type TEditorStore = {
   scale: number;
   translate: { dx: number; dy: number };
   pointer: { x: number; y: number };
+
+  creatingGeo: {
+    point?: { p: TCreatingPoint };
+    line?: { a: TCreatingPoint; b: TCreatingPoint };
+    circle?: { c: TCreatingPoint; r: TCreatingPoint };
+  };
 
   preselectedGeoId?: TID;
   selectedGeoIds: TID[];
@@ -74,6 +82,8 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
   scale: 1,
   translate: { dx: 0, dy: 0 },
   pointer: { x: 0, y: 0 },
+
+  creatingGeo: {},
 
   selectedGeoIds: [],
 

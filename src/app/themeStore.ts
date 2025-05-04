@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 type TThemeStore = {
   theme: {
+    background: string;
     oxColor: string;
     oyColor: string;
     selectedColor: string;
@@ -30,6 +31,7 @@ type TThemeStore = {
 
 const useThemeStore = create<TThemeStore>(() => ({
   theme: {
+    background: "#F2F2F2",
     oxColor: "#F008",
     oyColor: "#0F08",
     selectedColor: "#08F",

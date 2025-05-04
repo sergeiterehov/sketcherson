@@ -120,7 +120,13 @@ export default function Renderer() {
   };
 
   return (
-    <svg ref={svgRef} width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ userSelect: "none" }}>
+    <svg
+      ref={svgRef}
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      style={{ userSelect: "none", backgroundColor: theme.background }}
+    >
       <g
         data-layer="space"
         transform={`translate(${width / 2 + translate.dx * scale}, ${height / 2 + translate.dy * scale})`}

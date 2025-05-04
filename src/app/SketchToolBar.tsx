@@ -17,6 +17,12 @@ import AngleIcon from "@/icons/AngleIcon";
 export default function SketchToolBar() {
   const shortcuts = useShortcuts();
 
+  const creating = useEditorStore((s) => s.creating);
+
+  const initPointCreating = useEditorStore((s) => s.initPointCreating);
+  const initSegmentCreating = useEditorStore((s) => s.initSegmentCreating);
+  const initCircleCreating = useEditorStore((s) => s.initCircleCreating);
+
   const createCoincident = useEditorStore((s) => s.createCoincident);
   const createRadius = useEditorStore((s) => s.createRadius);
   const createDistance = useEditorStore((s) => s.createDistance);
@@ -24,6 +30,18 @@ export default function SketchToolBar() {
   const createPerpendicular = useEditorStore((s) => s.createPerpendicular);
   const createParallel = useEditorStore((s) => s.createParallel);
   const createAngle = useEditorStore((s) => s.createAngle);
+
+  const handlePointClick = () => {
+    initPointCreating();
+  };
+
+  const handleSegmentClick = () => {
+    initSegmentCreating();
+  };
+
+  const handleCircleClick = () => {
+    initCircleCreating();
+  };
 
   const handleCoincidentClick = () => {
     createCoincident();
@@ -56,16 +74,28 @@ export default function SketchToolBar() {
   return (
     <ToolBar>
       <ToolBarGroup>
-        <ToolBarButton>
+        <ToolBarButton
+          title={`Point [${shortcuts.point}]`}
+          aria-selected={Boolean(creating.point)}
+          onClick={handlePointClick}
+        >
           <PointIcon />
         </ToolBarButton>
-        <ToolBarButton>
+        <ToolBarButton
+          title={`Segment [${shortcuts.segment}]`}
+          aria-selected={Boolean(creating.segment)}
+          onClick={handleSegmentClick}
+        >
           <SegmentIcon />
         </ToolBarButton>
-        <ToolBarButton>
+        <ToolBarButton
+          title={`Circle [${shortcuts.circle}]`}
+          aria-selected={Boolean(creating.circle)}
+          onClick={handleCircleClick}
+        >
           <CircleIcon />
         </ToolBarButton>
-        <ToolBarButton>
+        <ToolBarButton aria-disabled>
           <ArcIcon />
         </ToolBarButton>
       </ToolBarGroup>
@@ -89,7 +119,7 @@ export default function SketchToolBar() {
         <ToolBarButton title={`Axis align [${shortcuts.align}]`} onClick={handleAlignClick}>
           <AlignIcon />
         </ToolBarButton>
-        <ToolBarButton>
+        <ToolBarButton aria-disabled>
           <TangentIcon />
         </ToolBarButton>
         <ToolBarButton title={`Angle [${shortcuts.angle}]`} onClick={handleAngleClick}>

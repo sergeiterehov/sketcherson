@@ -1,3 +1,4 @@
+import iconColor from "@/icons/utils/iconColor";
 import styled from "@emotion/styled";
 
 export const ToolBarSeparator = styled.div({
@@ -8,7 +9,6 @@ export const ToolBarSeparator = styled.div({
 });
 
 export const ToolBarButton = styled.div({
-  pointerEvents: "none",
   userSelect: "none",
   display: "flex",
   justifyContent: "center",
@@ -20,14 +20,25 @@ export const ToolBarButton = styled.div({
   padding: 4,
   lineHeight: "1em",
   borderRadius: 6,
+  color: "#000",
+
+  [iconColor.definition.basic]: "currentColor",
+
+  "&[aria-disabled='true']": {
+    cursor: "not-allowed",
+    pointerEvents: "none",
+    opacity: 0.2,
+  },
 
   ":not([aria-disabled='true'])": {
-    cursor: "pointer",
-    pointerEvents: "inherit",
-
-    ":hover": {
+    ":hover:not([aria-selected='true'])": {
       backgroundColor: "#F6F6F6",
     },
+  },
+
+  "&[aria-selected='true']": {
+    color: "#FFF",
+    backgroundColor: "#48F",
   },
 });
 

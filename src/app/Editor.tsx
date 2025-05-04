@@ -36,9 +36,12 @@ function ViewportSizeObserver(props: { children: React.ReactNode }) {
 export default function Editor() {
   const shortcuts = useShortcuts();
 
-  const resetGeoSelection = useEditorStore((s) => s.resetGeoSelection);
+  const cancelActiveOperation = useEditorStore((s) => s.cancelActiveOperation);
   const init = useEditorStore((s) => s.init);
   const reset = useEditorStore((s) => s.reset);
+  const initPointCreating = useEditorStore((s) => s.initPointCreating);
+  const initSegmentCreating = useEditorStore((s) => s.initSegmentCreating);
+  const initCircleCreating = useEditorStore((s) => s.initCircleCreating);
   const createCoincident = useEditorStore((s) => s.createCoincident);
   const createRadius = useEditorStore((s) => s.createRadius);
   const createDistance = useEditorStore((s) => s.createDistance);
@@ -47,7 +50,10 @@ export default function Editor() {
   const createParallel = useEditorStore((s) => s.createParallel);
   const createAngle = useEditorStore((s) => s.createAngle);
 
-  useKey(shortcuts.cancel, resetGeoSelection);
+  useKey(shortcuts.cancel, cancelActiveOperation);
+  useKey(shortcuts.point, initPointCreating);
+  useKey(shortcuts.segment, initSegmentCreating);
+  useKey(shortcuts.circle, initCircleCreating);
   useKey(shortcuts.coincident, createCoincident);
   useKey(shortcuts.radius, createRadius);
   useKey(shortcuts.distance, createDistance);

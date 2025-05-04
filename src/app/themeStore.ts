@@ -3,15 +3,20 @@ import { create } from "zustand";
 type TThemeStore = {
   theme: {
     background: string;
+
     oxColor: string;
     oyColor: string;
+
     selectedColor: string;
     preselectedColor: string;
+    creatingColor: string;
+
     lineColor: string;
-    pointColor: string;
-    constraintColor: string;
     lineWidth: number;
+    pointColor: string;
     pointRadius: number;
+    constraintColor: string;
+
     hitColor: string;
     interactiveStrokeWidth: number;
     interactivePointRadius: number;
@@ -19,6 +24,11 @@ type TThemeStore = {
 
   shortcuts: {
     cancel: string;
+
+    point: string;
+    segment: string;
+    circle: string;
+
     coincident: string;
     radius: string;
     distance: string;
@@ -36,6 +46,7 @@ const useThemeStore = create<TThemeStore>(() => ({
     oyColor: "#0F08",
     selectedColor: "#08F",
     preselectedColor: "#0AF",
+    creatingColor: "#0D4",
     lineColor: "#666",
     pointColor: "#333",
     constraintColor: "#D77",
@@ -48,12 +59,15 @@ const useThemeStore = create<TThemeStore>(() => ({
 
   shortcuts: {
     cancel: "Escape",
+    point: "p",
+    segment: "s",
+    circle: "c",
     coincident: "x",
     radius: "r",
     distance: "d",
     angle: "a",
-    align: "t",
-    perpendicular: "l",
+    align: "l",
+    perpendicular: "t",
     parallel: "i",
   },
 }));

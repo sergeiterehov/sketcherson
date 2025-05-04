@@ -5,6 +5,7 @@ import ConstraintsLayer from "./ConstraintsLayer";
 import useTheme from "../_utils/useTheme";
 import AxisLayer from "./AxisLayer";
 import GeometryLayer from "./GeometryLayer";
+import CreatingLayer from "./CreatingLayer";
 
 export default function Sketch() {
   const theme = useTheme();
@@ -19,6 +20,16 @@ export default function Sketch() {
   const stat = useEditorStore((s) => s.solvingStats);
   const paramsOfSelectedGeo = useEditorStore((s) => s.paramsOfSelectedGeo);
   const selectedGeoIds = useEditorStore((s) => s.selectedGeoIds);
+  const creating = useEditorStore((s) => s.creating);
+  const create = useEditorStore((s) => s.create);
+
+  const handleClickCapture = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!Object.keys(creating).length) return;
+
+    e.stopPropagation();
+
+    create();
+  };
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -83,6 +94,7 @@ export default function Sketch() {
       height={height}
       viewBox={`0 0 ${width} ${height}`}
       style={{ userSelect: "none", background: `linear-gradient(0deg, ${theme.background}, transparent)` }}
+      onClickCapture={handleClickCapture}
     >
       <g
         data-layer="space"
@@ -91,6 +103,7 @@ export default function Sketch() {
         <AxisLayer />
         <ConstraintsLayer />
         <GeometryLayer />
+        <CreatingLayer />
       </g>
       {/* INFO */}
       <g data-layer="info">

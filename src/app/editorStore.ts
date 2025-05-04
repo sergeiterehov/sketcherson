@@ -3,14 +3,17 @@ import { SketchSolver } from "@/core/solver";
 import { EGeo, TGeo, TID, TSketch } from "@/core/types";
 import {
   makeAngle,
+  makeCircle3,
   makeCoincident,
   makeDistance,
   makeHorizontalOrVertical,
   makeParallel,
   makePerpendicular,
+  makePoint,
   makePointOnCircle,
   makePointOnLine,
   makeRadius,
+  makeSegment4,
 } from "@/core/utils";
 
 type TCreatingPoint = { x: number; y: number };
@@ -20,10 +23,10 @@ type TEditorStore = {
   translate: { dx: number; dy: number };
   pointer: { x: number; y: number };
 
-  creatingGeo: {
+  creating: {
     point?: { p: TCreatingPoint };
-    line?: { a: TCreatingPoint; b: TCreatingPoint };
-    circle?: { c: TCreatingPoint; r: TCreatingPoint };
+    segment?: { a: TCreatingPoint; b?: TCreatingPoint };
+    circle?: { c: TCreatingPoint; r?: TCreatingPoint };
   };
 
   preselectedGeoId?: TID;
@@ -55,10 +58,19 @@ type TEditorStore = {
   moveTranslate(dx: number, dy: number): void;
   setPointer(x: number, y: number): void;
 
+  _updateCreating(): void;
+  create(): void;
+  resetCreating(): void;
+  initPointCreating(): void;
+  initSegmentCreating(): void;
+  initCircleCreating(): void;
+
   setPreselectedGeo(id: TID | undefined): void;
   resetGeoSelection(): void;
   toggleGeoSelection(id: TID): void;
   getSelectedGeos(): TGeo[];
+
+  cancelActiveOperation(): void;
 
   getGeo(id: TID): TGeo;
   getGeoOf<G extends EGeo>(type: G, id: TID): TGeo & { geo: G };
@@ -83,7 +95,7 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
   translate: { dx: 0, dy: 0 },
   pointer: { x: 0, y: 0 },
 
-  creatingGeo: {},
+  creating: {},
 
   selectedGeoIds: [],
 
@@ -126,6 +138,111 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
   setPointer: (x, y) => {
     set({ pointer: { x, y } });
+
+    get()._updateCreating();
+  },
+
+  _updateCreating: () => {
+    const {
+      pointer,
+      creating: { circle, point, segment },
+    } = get();
+
+    if (point) {
+      set({
+        creating: { point: { ...point, p: { ...pointer } } },
+      });
+    } else if (segment) {
+      if (!segment.b) {
+        set({
+          creating: { segment: { ...segment, a: { ...pointer } } },
+        });
+      } else {
+        set({
+          creating: { segment: { ...segment, b: { ...pointer } } },
+        });
+      }
+    } else if (circle) {
+      if (!circle.r) {
+        set({
+          creating: { circle: { ...circle, c: { ...pointer } } },
+        });
+      } else {
+        set({
+          creating: { circle: { ...circle, r: { ...pointer } } },
+        });
+      }
+    }
+  },
+
+  create: () => {
+    const {
+      pointer,
+      creating: { point, segment, circle },
+      sketch,
+      _updateGeoMap,
+      _solve,
+      initPointCreating,
+      initSegmentCreating,
+      initCircleCreating,
+    } = get();
+
+    if (!sketch) return;
+
+    if (point) {
+      makePoint(sketch, point.p.x, point.p.y);
+      initPointCreating();
+    } else if (segment) {
+      if (!segment.b) {
+        set({ creating: { segment: { ...segment, b: { ...pointer } } } });
+
+        return;
+      }
+
+      makeSegment4(sketch, segment.a.x, segment.a.y, segment.b.x, segment.b.y);
+      initSegmentCreating();
+    } else if (circle) {
+      if (!circle.r) {
+        set({ creating: { circle: { ...circle, r: { ...pointer } } } });
+
+        return;
+      }
+
+      const r = Math.sqrt((circle.c.x - circle.r.x) ** 2 + (circle.c.y - circle.r.y) ** 2);
+
+      makeCircle3(sketch, circle.c.x, circle.c.y, r);
+      initCircleCreating();
+    } else {
+      return;
+    }
+
+    _updateGeoMap();
+    _solve();
+  },
+
+  resetCreating: () => {
+    set({ creating: {} });
+  },
+
+  initPointCreating: () => {
+    const { pointer, resetGeoSelection } = get();
+
+    set({ creating: { point: { p: { ...pointer } } } });
+    resetGeoSelection();
+  },
+
+  initSegmentCreating: () => {
+    const { pointer, resetGeoSelection } = get();
+
+    set({ creating: { segment: { a: { ...pointer } } } });
+    resetGeoSelection();
+  },
+
+  initCircleCreating: () => {
+    const { pointer, resetGeoSelection } = get();
+
+    set({ creating: { circle: { c: { ...pointer } } } });
+    resetGeoSelection();
   },
 
   setPreselectedGeo: (id) => {
@@ -154,8 +271,17 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     return selectedGeoIds.map((id) => getGeo(id));
   },
 
+  cancelActiveOperation: () => {
+    const { resetGeoSelection, resetCreating } = get();
+
+    resetGeoSelection();
+    resetCreating();
+  },
+
   _updateGeoMap: () => {
-    const sketch = get().sketch;
+    const { sketch, _solver } = get();
+
+    _solver?.update();
 
     if (!sketch) return;
 

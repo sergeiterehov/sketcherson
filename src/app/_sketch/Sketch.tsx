@@ -121,6 +121,7 @@ export default function Sketch() {
           <tspan x="0" dy="1.2em">
             Params:{" "}
             {[
+              paramsOfSelectedGeo.angle !== undefined && `Angle=${paramsOfSelectedGeo.angle.toLocaleString()}°`,
               paramsOfSelectedGeo.length !== undefined && `Length=${paramsOfSelectedGeo.length.toLocaleString()}`,
               paramsOfSelectedGeo.distance !== undefined && `Distance=${paramsOfSelectedGeo.distance.toLocaleString()}`,
               paramsOfSelectedGeo.radius !== undefined &&

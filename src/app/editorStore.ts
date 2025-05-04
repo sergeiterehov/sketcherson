@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { SketchSolver } from "@/core/solver";
-import { EGeo, TGeo, TID, TSketch } from "@/core/types";
+import { EGeo, TGeo, TGeoPoint, TID, TSketch } from "@/core/types";
 import {
   makeAngle,
   makeCircle3,
@@ -348,7 +348,8 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
     if (!selectedCircles.length) return;
 
-    const input = Number(prompt("Radius"));
+    const currentRadius = selectedCircles[0].r[0];
+    const input = Number(prompt("Radius", currentRadius.toFixed(2)));
 
     if (Number.isNaN(input)) return;
 
@@ -375,9 +376,14 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     if (!selectedGeos.length) return;
 
     const [a, b] = selectedGeos;
+    let currentLength = 1;
+
+    const calcCurrentLength = (a: TGeoPoint, b: TGeoPoint) => {
+      currentLength = Math.sqrt((a.x[0] - b.x[0]) ** 2 + (a.y[0] - b.y[0]) ** 2);
+    };
 
     const ask = (name: string): number | undefined => {
-      const value = Number(prompt(name));
+      const value = Number(prompt(name, currentLength.toFixed(2)));
 
       if (Number.isNaN(value)) return;
 
@@ -387,6 +393,8 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     };
 
     if (a.geo === EGeo.Point && b.geo === EGeo.Point) {
+      calcCurrentLength(a, b);
+
       const d = ask("Distance");
 
       if (d === undefined) return;
@@ -395,6 +403,8 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
     } else if (a.geo === EGeo.Segment) {
       const pa = getGeoOf(EGeo.Point, a.a_id);
       const pb = getGeoOf(EGeo.Point, a.b_id);
+
+      calcCurrentLength(pa, pb);
 
       const d = ask("Length");
 
@@ -475,7 +485,7 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
   },
 
   createAngle: () => {
-    const { sketch, getSelectedGeos, resetGeoSelection, _solve } = get();
+    const { sketch, getSelectedGeos, resetGeoSelection, _solve, getGeoOf } = get();
 
     if (!sketch) return;
 
@@ -483,13 +493,21 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
 
     if (segments.length !== 2) return;
 
-    const value = Number(prompt("Angle"));
+    const [a, b] = segments;
+
+    const a1 = getGeoOf(EGeo.Point, a.a_id);
+    const a2 = getGeoOf(EGeo.Point, a.b_id);
+    const b1 = getGeoOf(EGeo.Point, b.a_id);
+    const b2 = getGeoOf(EGeo.Point, b.b_id);
+
+    const current =
+      Math.abs(Math.atan2(a2.y[0] - a1.y[0], a2.x[0] - a1.x[0]) - Math.atan2(b2.y[0] - b1.y[0], b2.x[0] - b1.x[0])) *
+      (180 / Math.PI);
+    const value = Number(prompt("Angle", current.toFixed(2)));
 
     if (Number.isNaN(value)) return;
 
     if (value <= 0) return;
-
-    const [a, b] = segments;
 
     makeAngle(sketch, a, b, value);
 
@@ -515,10 +533,21 @@ const useEditorStore = create<TEditorStore>((set, get) => ({
         params.radius = geo.r[0];
       }
     } else if (geos.length === 2) {
-      const [geo_1, geo_2] = geos;
+      const [a, b] = geos;
 
-      if (geo_1.geo === EGeo.Point && geo_2.geo === EGeo.Point) {
-        params.distance = Math.sqrt((geo_1.x[0] - geo_2.x[0]) ** 2 + (geo_1.y[0] - geo_2.y[0]) ** 2);
+      if (a.geo === EGeo.Point && b.geo === EGeo.Point) {
+        params.distance = Math.sqrt((a.x[0] - b.x[0]) ** 2 + (a.y[0] - b.y[0]) ** 2);
+      } else if (a.geo === EGeo.Segment && b.geo === EGeo.Segment) {
+        const a1 = getGeoOf(EGeo.Point, a.a_id);
+        const a2 = getGeoOf(EGeo.Point, a.b_id);
+        const b1 = getGeoOf(EGeo.Point, b.a_id);
+        const b2 = getGeoOf(EGeo.Point, b.b_id);
+
+        params.angle =
+          Math.abs(
+            Math.atan2(a2.y[0] - a1.y[0], a2.x[0] - a1.x[0]) - Math.atan2(b2.y[0] - b1.y[0], b2.x[0] - b1.x[0])
+          ) *
+          (180 / Math.PI);
       }
     }
 
